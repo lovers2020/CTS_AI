@@ -34,6 +34,10 @@
       "destination": "/index.html"
     },
     {
+      "source": "/schedule",
+      "destination": "/index.html"
+    },
+    {
       "source": "/sessions",
       "destination": "/index.html"
     },

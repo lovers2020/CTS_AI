@@ -161,7 +161,7 @@
       </a>
       <nav class="site-nav" id="site-nav" aria-label="주요 메뉴">
         <a href="/resources" data-route data-view="resources" data-protected-link>자료실</a>
-        <a href="/sessions" data-route data-view="sessions" data-protected-link>모임</a>
+        <a href="/schedule" data-route data-view="sessions" data-protected-link>일정</a>
         <a href="/questions" data-route data-view="questions" data-protected-link>질문</a>
         <a href="/members" data-route data-view="members" data-protected-link>멤버</a>
         <a href="/about" data-route>소개</a>
@@ -198,9 +198,9 @@
               <span class="button-icon" aria-hidden="true">↳</span>
               자료 둘러보기
             </a>
-            <a class="button button-secondary" href="/sessions" data-route data-view="sessions" data-protected-link>
+            <a class="button button-secondary" href="/schedule" data-route data-view="sessions" data-protected-link>
               <span class="button-icon" aria-hidden="true">□</span>
-              모임 일정
+              일정 관리
             </a>
           </div>
         </div>
@@ -238,7 +238,7 @@
           </div>
           <div>
             <strong data-stat="sessions">8</strong>
-            <span>예정 세션</span>
+            <span>예정 일정</span>
           </div>
           <div>
             <strong data-stat="members">36</strong>
@@ -274,8 +274,8 @@
                 <a class="tab is-active" href="/resources" data-route data-view="resources">
                   자료
                 </a>
-                <a class="tab" href="/sessions" data-route data-view="sessions" id="sessions">
-                  모임
+                <a class="tab" href="/schedule" data-route data-view="sessions" id="sessions">
+                  일정
                 </a>
                 <a class="tab" href="/questions" data-route data-view="questions" id="board">
                   질문
@@ -289,6 +289,10 @@
                 <span class="search-icon" aria-hidden="true">⌕</span>
                 <input data-search type="search" placeholder="프롬프트, 자동화, 문서 요약">
               </label>
+              <button class="button button-primary toolbar-action" type="button" data-open-session hidden>
+                <span class="button-icon" aria-hidden="true">＋</span>
+                일정 등록
+              </button>
             </div>
 
             <div class="list-grid" data-list aria-live="polite"></div>
@@ -347,7 +351,7 @@
             <p class="eyebrow">About Ctrl + AI</p>
             <h2 id="join-title">AI를 업무 언어로 바꾸는 사내 실험실</h2>
             <p>
-              Ctrl + AI는 AI를 잘 아는 사람만을 위한 모임이 아니라, 내 업무를 더 낫게 만들고 싶은 구성원이 함께 배우는 공간입니다.
+              Ctrl + AI는 AI를 잘 아는 사람만을 위한 공간이 아니라, 내 업무를 더 낫게 만들고 싶은 구성원이 함께 배우는 공간입니다.
             </p>
           </div>
           <div class="intro-grid">
@@ -404,6 +408,64 @@
       </form>
     </dialog>
 
+
+    <dialog class="question-dialog session-dialog" data-session-dialog aria-labelledby="session-dialog-title">
+      <form method="dialog" class="dialog-shell" data-session-form>
+        <div class="dialog-head">
+          <h2 id="session-dialog-title">일정 등록</h2>
+          <button class="icon-button" type="button" aria-label="닫기" data-close-session>×</button>
+        </div>
+        <div class="session-edit-grid">
+          <label>
+            <span>날짜</span>
+            <input name="date" type="date" required>
+          </label>
+          <label>
+            <span>시작 시간</span>
+            <input name="startTime" type="time" required>
+          </label>
+          <label>
+            <span>종료 시간</span>
+            <input name="endTime" type="time" required>
+          </label>
+          <label>
+            <span>장소</span>
+            <input name="location" maxlength="40" placeholder="예: 3층 회의실 / 온라인">
+          </label>
+        </div>
+        <label>
+          <span>일정명</span>
+          <input name="title" required maxlength="70" placeholder="예: Ctrl + AI 정기 일정">
+        </label>
+        <label>
+          <span>목적</span>
+          <input name="purpose" required maxlength="100" placeholder="예: 회의록 자동화 실습 및 적용 방안 논의">
+        </label>
+        <label>
+          <span>내용</span>
+          <textarea name="summary" required maxlength="220" rows="4" placeholder="준비물, 진행 방식, 공유할 내용 등을 입력하세요."></textarea>
+        </label>
+        <label>
+          <span>분류</span>
+          <select name="tag" required>
+            <option value="회의">회의</option>
+            <option value="외근/출장">외근/출장</option>
+            <option value="휴가">휴가</option>
+            <option value="재택 근무">재택 근무</option>
+            <option value="개인 일정">개인 일정</option>
+            <option value="기타">기타</option>
+          </select>
+        </label>
+        <p class="form-status" data-session-status role="status" aria-live="polite"></p>
+        <div class="dialog-actions">
+          <button class="button button-secondary" type="button" data-close-session>취소</button>
+          <button class="button button-primary" type="submit">
+            <span class="button-icon" aria-hidden="true">＋</span>
+            저장
+          </button>
+        </div>
+      </form>
+    </dialog>
     <dialog class="question-dialog member-dialog" data-member-dialog aria-labelledby="member-dialog-title">
       <form method="dialog" class="dialog-shell" data-member-form>
         <div class="dialog-head">

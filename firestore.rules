@@ -59,6 +59,7 @@ service cloud.firestore {
         "startTime",
         "endTime",
         "title",
+        "purpose",
         "summary",
         "tag",
         "location",
@@ -77,6 +78,9 @@ service cloud.firestore {
       && request.resource.data.title is string
       && request.resource.data.title.size() > 0
       && request.resource.data.title.size() <= 70
+      && request.resource.data.purpose is string
+      && request.resource.data.purpose.size() > 0
+      && request.resource.data.purpose.size() <= 100
       && request.resource.data.summary is string
       && request.resource.data.summary.size() > 0
       && request.resource.data.summary.size() <= 220

@@ -2228,3 +2228,578 @@ progress::-moz-progress-bar {
     grid-template-columns: 1fr;
   }
 }
+
+/* Schedule dashboard view inspired by the requested calendar layout */
+body[data-view="sessions"] {
+  --schedule-bg: #f4f7fb;
+  --schedule-sidebar: #0f172a;
+  --schedule-sidebar-soft: #1e293b;
+  --schedule-blue: #2f68e8;
+  --schedule-text: #14213d;
+  background: var(--schedule-bg);
+}
+
+body[data-view="sessions"] .app-shell {
+  min-height: 100svh;
+  background: var(--schedule-bg);
+}
+
+body[data-view="sessions"] .site-header {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 260px;
+  min-height: 100svh;
+  gap: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: var(--schedule-sidebar);
+  color: #ffffff;
+  box-shadow: 8px 0 32px rgba(15, 23, 42, 0.12);
+  backdrop-filter: none;
+}
+
+body[data-view="sessions"] .brand {
+  min-height: 78px;
+  padding: 0 20px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+  color: #ffffff;
+}
+
+body[data-view="sessions"] .brand-mark {
+  border: 2px solid #3b82f6;
+  background: transparent;
+  color: #60a5fa;
+}
+
+body[data-view="sessions"] .site-nav {
+  display: grid;
+  gap: 8px;
+  margin: 28px 14px 0;
+}
+
+body[data-view="sessions"] .site-nav a {
+  min-height: 48px;
+  justify-content: flex-start;
+  padding: 0 16px;
+  border-radius: 10px;
+  color: #a8b5cc;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+body[data-view="sessions"] .site-nav a:hover,
+body[data-view="sessions"] .site-nav a:focus-visible {
+  background: rgba(59, 130, 246, 0.14);
+  color: #ffffff;
+}
+
+body[data-view="sessions"] .site-nav a[aria-current="page"] {
+  background: var(--schedule-blue);
+  color: #ffffff;
+}
+
+body[data-view="sessions"] .auth-panel {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  margin-top: auto;
+  padding: 16px;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+body[data-view="sessions"] .auth-user {
+  grid-template-columns: 36px minmax(0, 1fr);
+  background: transparent;
+  color: #ffffff;
+  padding: 0;
+}
+
+body[data-view="sessions"] .auth-avatar {
+  border-radius: 50%;
+  background: #334155;
+}
+
+body[data-view="sessions"] .auth-user span {
+  color: #94a3b8;
+}
+
+body[data-view="sessions"] .auth-button,
+body[data-view="sessions"] .auth-button-muted {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: #a8b5cc;
+  text-align: left;
+}
+
+body[data-view="sessions"] main {
+  min-height: 100svh;
+  margin-left: 260px;
+  background: var(--schedule-bg);
+}
+
+body[data-view="sessions"] .knowledge-section {
+  padding: 0 0 56px;
+  background: var(--schedule-bg);
+}
+
+body[data-view="sessions"] .section-inner {
+  width: min(1440px, calc(100% - 72px));
+}
+
+body[data-view="sessions"] .knowledge-layout {
+  display: block;
+}
+
+body[data-view="sessions"] .knowledge-main {
+  min-width: 0;
+}
+
+body[data-view="sessions"] .knowledge-main > .section-heading {
+  display: flex;
+  align-items: center;
+  min-height: 76px;
+  margin: 0 calc(50% - 50vw) 28px;
+  padding: 0 max(36px, calc((100vw - 260px - 1440px) / 2 + 36px));
+  border-bottom: 1px solid #dce3ee;
+  background: #ffffff;
+}
+
+body[data-view="sessions"] .knowledge-main > .section-heading .eyebrow {
+  display: none;
+}
+
+body[data-view="sessions"] .knowledge-main > .section-heading h2 {
+  color: #0f172a;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+body[data-view="sessions"] .club-panel,
+body[data-view="sessions"] .tabs,
+body[data-view="sessions"] .desk-toolbar .search {
+  display: none;
+}
+
+body[data-view="sessions"] .desk-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 0 18px;
+}
+
+body[data-view="sessions"] .toolbar-action {
+  min-height: 46px;
+  padding-inline: 20px;
+  border-radius: 9px;
+  background: var(--schedule-blue);
+  color: #ffffff;
+  box-shadow: 0 14px 30px rgba(47, 104, 232, 0.24);
+}
+
+body[data-view="sessions"] .list-grid.is-calendar {
+  display: block;
+}
+
+body[data-view="sessions"] .calendar-view {
+  display: grid;
+  gap: 18px;
+}
+
+body[data-view="sessions"] .calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  min-height: 44px;
+}
+
+body[data-view="sessions"] .calendar-title-controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+body[data-view="sessions"] .calendar-title-controls h3 {
+  min-width: 150px;
+  margin: 0;
+  color: var(--schedule-text);
+  font-size: clamp(1.35rem, 2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+body[data-view="sessions"] .calendar-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+body[data-view="sessions"] .calendar-controls .icon-button {
+  width: 36px;
+  height: 36px;
+  border-color: #d5dfed;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #475569;
+  font-size: 1.2rem;
+}
+
+body[data-view="sessions"] .calendar-controls .button-secondary {
+  min-height: 36px;
+  padding: 0 14px;
+  border-color: #d5dfed;
+  background: #ffffff;
+  color: #334155;
+  box-shadow: none;
+}
+
+body[data-view="sessions"] .schedule-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #64748b;
+  font-size: 0.83rem;
+  font-weight: 700;
+}
+
+.schedule-legend-item,
+.schedule-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.schedule-legend-item i {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.type-meeting { --type-color: #2f68e8; --type-bg: #dbeafe; --type-border: #bfdbfe; }
+.type-offsite { --type-color: #a855f7; --type-bg: #f3e8ff; --type-border: #e9d5ff; }
+.type-vacation { --type-color: #16a34a; --type-bg: #dcfce7; --type-border: #bbf7d0; }
+.type-remote { --type-color: #f59e0b; --type-bg: #fef3c7; --type-border: #fde68a; }
+.type-personal { --type-color: #64748b; --type-bg: #e2e8f0; --type-border: #cbd5e1; }
+
+.schedule-legend-item,
+.schedule-chip {
+  color: var(--type-color);
+}
+
+body[data-view="sessions"] .calendar-board {
+  overflow: hidden;
+  border: 1px solid #d9e2ee;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
+}
+
+body[data-view="sessions"] .calendar-weekdays,
+body[data-view="sessions"] .calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+body[data-view="sessions"] .calendar-weekdays {
+  border-bottom: 1px solid #d9e2ee;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 0.86rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+body[data-view="sessions"] .calendar-weekdays span {
+  padding: 13px 4px;
+}
+
+body[data-view="sessions"] .calendar-weekdays span:first-child {
+  color: #ef4444;
+}
+
+body[data-view="sessions"] .calendar-grid {
+  border: 0;
+  border-radius: 0;
+  background: #ffffff;
+  box-shadow: none;
+}
+
+body[data-view="sessions"] .calendar-cell {
+  min-height: 132px;
+  padding: 12px 12px 10px;
+  border-right: 1px solid #e7edf5;
+  border-bottom: 1px solid #e7edf5;
+  background: #ffffff;
+}
+
+body[data-view="sessions"] .calendar-cell:nth-child(7n) {
+  border-right: 0;
+}
+
+body[data-view="sessions"] .calendar-cell.is-empty {
+  background: #fbfcfe;
+}
+
+body[data-view="sessions"] .calendar-cell.is-today {
+  background: #f8fbff;
+  box-shadow: inset 0 0 0 2px rgba(47, 104, 232, 0.12);
+}
+
+body[data-view="sessions"] .calendar-day-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+body[data-view="sessions"] .calendar-day-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  color: #1e293b;
+  font-weight: 800;
+}
+
+body[data-view="sessions"] .calendar-cell.is-sunday .calendar-day-number {
+  color: #ef4444;
+}
+
+body[data-view="sessions"] .calendar-cell.is-today .calendar-day-number {
+  background: var(--schedule-blue);
+  color: #ffffff;
+}
+
+body[data-view="sessions"] .calendar-day-count {
+  color: #94a3b8;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+body[data-view="sessions"] .calendar-events {
+  display: grid;
+  gap: 6px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+body[data-view="sessions"] .schedule-event {
+  display: grid;
+  gap: 2px;
+  min-height: 38px;
+  padding: 7px 9px;
+  border: 1px solid var(--type-border);
+  border-radius: 5px;
+  background: var(--type-bg);
+}
+
+body[data-view="sessions"] .schedule-event strong,
+body[data-view="sessions"] .schedule-event span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body[data-view="sessions"] .schedule-event strong {
+  color: var(--type-color);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+body[data-view="sessions"] .schedule-event span {
+  color: #64748b;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+body[data-view="sessions"] .calendar-more {
+  margin: 7px 0 0;
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+body[data-view="sessions"] .calendar-agenda {
+  padding: 18px 20px;
+  border: 1px solid #d9e2ee;
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+body[data-view="sessions"] .calendar-agenda [data-calendar-agenda] {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+body[data-view="sessions"] .calendar-agenda-card {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid var(--type-border);
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+body[data-view="sessions"] .calendar-agenda-time {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  border-radius: 999px;
+  background: var(--type-bg);
+  color: var(--type-color);
+  font-weight: 800;
+}
+
+.calendar-agenda-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.schedule-chip {
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--type-bg);
+  color: var(--type-color);
+  font-size: 0.72rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+body[data-view="sessions"] .calendar-purpose {
+  margin: 5px 0 0;
+  color: #334155;
+  font-weight: 800;
+}
+
+@media (max-width: 980px) {
+  body[data-view="sessions"] .site-header {
+    position: fixed;
+    inset: 12px 12px auto;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    width: auto;
+    min-height: 62px;
+    padding: 8px 10px 8px 14px;
+    border: 1px solid rgba(17, 19, 26, 0.12);
+    border-radius: 999px;
+    background: rgba(255, 253, 248, 0.94);
+    color: var(--ink);
+  }
+
+  body[data-view="sessions"] .brand {
+    min-height: auto;
+    padding: 0;
+    border: 0;
+    color: var(--ink);
+  }
+
+  body[data-view="sessions"] .brand-mark {
+    background: var(--ink);
+    color: var(--lime);
+    border: 0;
+  }
+
+  body[data-view="sessions"] .site-nav {
+    position: fixed;
+    inset: 88px 12px auto;
+    display: none;
+    margin: 0;
+    padding: 10px;
+    border-radius: 16px;
+    background: var(--ink);
+  }
+
+  body[data-view="sessions"].menu-open .site-nav {
+    display: grid;
+  }
+
+  body[data-view="sessions"] .auth-panel {
+    flex-direction: row;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  body[data-view="sessions"] .auth-button,
+  body[data-view="sessions"] .auth-button-muted {
+    width: auto;
+    background: var(--ink);
+    color: #ffffff;
+    text-align: center;
+  }
+
+  body[data-view="sessions"] main {
+    margin-left: 0;
+  }
+
+  body[data-view="sessions"] .knowledge-section {
+    padding-top: 96px;
+  }
+
+  body[data-view="sessions"] .knowledge-main > .section-heading {
+    min-height: auto;
+    margin: 0 0 20px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  body[data-view="sessions"] .section-inner {
+    width: min(100% - 32px, 920px);
+  }
+
+  body[data-view="sessions"] .calendar-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 720px) {
+  body[data-view="sessions"] .calendar-weekdays,
+  body[data-view="sessions"] .calendar-grid {
+    grid-template-columns: 1fr;
+  }
+
+  body[data-view="sessions"] .calendar-weekdays {
+    display: none;
+  }
+
+  body[data-view="sessions"] .calendar-cell,
+  body[data-view="sessions"] .calendar-cell:nth-child(7n) {
+    min-height: auto;
+    border-right: 0;
+  }
+
+  body[data-view="sessions"] .calendar-cell.is-empty,
+  body[data-view="sessions"] .calendar-cell:not(:has(.calendar-events li)) {
+    display: none;
+  }
+
+  body[data-view="sessions"] .calendar-agenda-card,
+  body[data-view="sessions"] .session-edit-grid {
+    grid-template-columns: 1fr;
+  }
+
+  body[data-view="sessions"] .calendar-title-controls {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

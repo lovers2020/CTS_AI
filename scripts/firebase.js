@@ -437,8 +437,9 @@ function normalizeSessionPayload(session, user) {
     startTime: String(session.startTime || "").trim(),
     endTime: String(session.endTime || "").trim(),
     title: String(session.title || "").trim(),
+    purpose: String(session.purpose || "").trim(),
     summary: String(session.summary || "").trim(),
-    tag: String(session.tag || "모임").trim() || "모임",
+    tag: String(session.tag || "회의").trim() || "회의",
     location: String(session.location || "").trim(),
     owner: String(session.owner || user?.name || "Ctrl + AI 멤버").trim(),
     ownerUid: user?.uid || "",
@@ -457,8 +458,12 @@ function normalizeSessionPayload(session, user) {
     throw new Error("종료 시간은 시작 시간보다 늦어야 합니다.");
   }
 
-  if (!payload.title || !payload.summary) {
-    throw new Error("목적/제목과 내용을 입력해 주세요.");
+  if (!payload.title || !payload.purpose || !payload.summary) {
+    throw new Error("일정명, 목적, 내용을 입력해 주세요.");
+  }
+
+  if (payload.purpose.length > 100) {
+    throw new Error("목적은 100자 이하로 입력해 주세요.");
   }
 
   return payload;
@@ -469,7 +474,7 @@ async function createSession(session) {
     const user = await getCurrentUser();
 
     if (!user) {
-      throw new Error("로그인 후 일정을 추가할 수 있습니다.");
+      throw new Error("로그인 후 일정을 등록할 수 있습니다.");
     }
 
     const payload = normalizeSessionPayload(session, user);
@@ -488,7 +493,7 @@ async function createSession(session) {
   const user = client.auth.currentUser;
 
   if (!user) {
-    throw new Error("로그인 후 일정을 추가할 수 있습니다.");
+    throw new Error("로그인 후 일정을 등록할 수 있습니다.");
   }
 
   const profile = await readMemberProfile(user.uid);

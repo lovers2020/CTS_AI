@@ -21,7 +21,7 @@ const state = {
 
 const viewLabels = {
   resources: "자료",
-  sessions: "모임",
+  sessions: "일정",
   questions: "질문",
   members: "멤버"
 };
@@ -29,20 +29,32 @@ const viewLabels = {
 const pageRoutes = {
   "/": { page: "home", title: "Ctrl + AI | 사내 AI 활용 동호회" },
   "/resources": { page: "data", view: "resources", title: "자료실 | Ctrl + AI" },
-  "/sessions": { page: "data", view: "sessions", title: "모임 | Ctrl + AI" },
+  "/schedule": { page: "data", view: "sessions", title: "일정 관리 | Ctrl + AI" },
   "/questions": { page: "data", view: "questions", title: "질문 | Ctrl + AI" },
   "/members": { page: "data", view: "members", title: "멤버 | Ctrl + AI" },
   "/about": { page: "about", title: "소개 | Ctrl + AI" }
 };
 
+const routeAliases = {
+  "/sessions": "/schedule"
+};
+
 const routeByView = {
   resources: "/resources",
-  sessions: "/sessions",
+  sessions: "/schedule",
   questions: "/questions",
   members: "/members"
 };
 
-const protectedPaths = new Set(Object.values(routeByView));
+const protectedPaths = new Set([...Object.values(routeByView), "/sessions"]);
+
+const scheduleTypes = [
+  { key: "meeting", label: "회의", aliases: ["회의", "미팅", "스터디", "공유회", "실습", "워크숍"] },
+  { key: "offsite", label: "외근/출장", aliases: ["외근/출장", "외근", "출장"] },
+  { key: "vacation", label: "휴가", aliases: ["휴가", "연차", "반차"] },
+  { key: "remote", label: "재택 근무", aliases: ["재택 근무", "재택", "원격"] },
+  { key: "personal", label: "개인 일정", aliases: ["개인 일정", "개인"] }
+];
 
 const listElement = document.querySelector("[data-list]");
 const spotlightElement = document.querySelector("[data-spotlight-list]");
@@ -293,7 +305,8 @@ function closeLoginDialog() {
 
 function normalizePath(pathname = location.pathname) {
   const path = pathname.replace(/\/+$/, "") || "/";
-  return pageRoutes[path] ? path : "/";
+  const canonicalPath = routeAliases[path] || path;
+  return pageRoutes[canonicalPath] ? canonicalPath : "/";
 }
 
 function getCurrentRoute() {
@@ -334,7 +347,7 @@ function updatePageHeading(view) {
 
   const headings = {
     resources: ["Knowledge Desk", "AI 활용 자료실"],
-    sessions: ["Session Desk", "모임 일정"],
+    sessions: ["Calendar", "일정 관리"],
     questions: ["Question Board", "질문 게시판"],
     members: ["Member Directory", "멤버 목록"]
   };
@@ -357,6 +370,8 @@ function applyRoute({ scroll = false } = {}) {
 
   if (route.view) {
     setView(route.view, { updateUrl: false });
+  } else {
+    document.body.dataset.view = route.page;
   }
 
   if (scroll) {
@@ -513,13 +528,36 @@ function sortSessionsAsc(items) {
   });
 }
 
+function getSessionTypeKey(tag) {
+  const normalized = String(tag || "회의").trim();
+  const match = scheduleTypes.find((type) => type.aliases.includes(normalized));
+  return match?.key || "meeting";
+}
+
+function getSessionTypeLabel(tag) {
+  const normalized = String(tag || "회의").trim();
+  const match = scheduleTypes.find((type) => type.aliases.includes(normalized));
+  return match?.label || normalized || "회의";
+}
+
+function createScheduleLegend() {
+  return scheduleTypes.map((type) => `
+    <span class="schedule-legend-item type-${type.key}"><i aria-hidden="true"></i>${escapeHtml(type.label)}</span>
+  `).join("");
+}
+
 function createSessionAgendaCard(item) {
   const article = document.createElement("article");
-  article.className = "calendar-agenda-card";
+  const typeKey = getSessionTypeKey(item.tag);
+  article.className = `calendar-agenda-card type-${typeKey}`;
   article.innerHTML = `
     <div class="calendar-agenda-time">${escapeHtml(item.startTime || "--:--")}</div>
     <div>
-      <h3>${escapeHtml(item.title || "제목 없음")}</h3>
+      <div class="calendar-agenda-title-row">
+        <h3>${escapeHtml(item.title || "제목 없음")}</h3>
+        <span class="schedule-chip type-${typeKey}">${escapeHtml(getSessionTypeLabel(item.tag))}</span>
+      </div>
+      ${item.purpose ? `<p class="calendar-purpose">${escapeHtml(item.purpose)}</p>` : ""}
       <p>${escapeHtml(item.summary || "내용 없음")}</p>
       <div class="calendar-agenda-meta">
         <span>${escapeHtml(item.endTime ? `${item.startTime || ""}~${item.endTime}` : item.startTime || "시간 미정")}</span>
@@ -537,7 +575,7 @@ function renderSessionCalendar(items) {
 
   const monthDate = new Date(state.calendarDate.getFullYear(), state.calendarDate.getMonth(), 1);
   const todayKey = getDateKey(new Date());
-  const monthLabel = new Intl.DateTimeFormat("ko-KR", { year: "numeric", month: "long" }).format(monthDate);
+  const monthLabel = `${monthDate.getFullYear()}년 ${monthDate.getMonth() + 1}월`;
   const monthKey = getMonthKey(monthDate);
   const sessionsByDate = new Map();
 
@@ -550,6 +588,7 @@ function renderSessionCalendar(items) {
 
   const firstDay = monthDate.getDay();
   const daysInMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0).getDate();
+  const totalCells = Math.max(35, Math.ceil((firstDay + daysInMonth) / 7) * 7);
   const cells = [];
 
   for (let blank = 0; blank < firstDay; blank += 1) {
@@ -560,41 +599,55 @@ function renderSessionCalendar(items) {
     const date = new Date(monthDate.getFullYear(), monthDate.getMonth(), day);
     const key = getDateKey(date);
     const daySessions = sessionsByDate.get(key) || [];
-    const labels = daySessions.slice(0, 3).map((session) => `
-      <li>
-        <span>${escapeHtml(session.startTime || "--:--")}</span>
-        <strong>${escapeHtml(session.title || "제목 없음")}</strong>
-      </li>
-    `).join("");
+    const weekday = date.getDay();
+    const labels = daySessions.slice(0, 3).map((session) => {
+      const typeKey = getSessionTypeKey(session.tag);
+      return `
+        <li class="schedule-event type-${typeKey}" title="${escapeHtml(session.title || "제목 없음")}">
+          <strong>${escapeHtml(session.title || "제목 없음")}</strong>
+          <span>${escapeHtml(session.purpose || session.location || session.owner || "")}</span>
+        </li>
+      `;
+    }).join("");
     const more = daySessions.length > 3 ? `<p class="calendar-more">+${daySessions.length - 3}개 더</p>` : "";
+    const count = daySessions.length ? `<span class="calendar-day-count">${daySessions.length}건</span>` : "";
     cells.push(`
-      <div class="calendar-cell${key === todayKey ? " is-today" : ""}" data-date="${key}">
-        <div class="calendar-day-number">${day}</div>
+      <div class="calendar-cell${key === todayKey ? " is-today" : ""}${weekday === 0 ? " is-sunday" : ""}${weekday === 6 ? " is-saturday" : ""}" data-date="${key}" role="gridcell">
+        <div class="calendar-day-head">
+          <span class="calendar-day-number">${day}</span>
+          ${count}
+        </div>
         <ul class="calendar-events">${labels}</ul>
         ${more}
       </div>
     `);
   }
 
+  while (cells.length < totalCells) {
+    cells.push(`<div class="calendar-cell is-empty" aria-hidden="true"></div>`);
+  }
+
   const visibleItems = sortSessionsAsc(items).filter((item) => getSessionDateKey(item).startsWith(monthKey));
 
   wrapper.innerHTML = `
     <div class="calendar-header">
-      <div>
-        <p class="eyebrow">Calendar</p>
-        <h3>${escapeHtml(monthLabel)} 일정</h3>
+      <div class="calendar-title-controls">
+        <h3>${escapeHtml(monthLabel)}</h3>
+        <div class="calendar-controls" aria-label="달력 월 이동">
+          <button class="icon-button" type="button" data-calendar-prev aria-label="이전 달">‹</button>
+          <button class="button button-secondary" type="button" data-calendar-today>오늘</button>
+          <button class="icon-button" type="button" data-calendar-next aria-label="다음 달">›</button>
+        </div>
       </div>
-      <div class="calendar-controls" aria-label="달력 월 이동">
-        <button class="icon-button" type="button" data-calendar-prev aria-label="이전 달">‹</button>
-        <button class="button button-secondary" type="button" data-calendar-today>오늘</button>
-        <button class="icon-button" type="button" data-calendar-next aria-label="다음 달">›</button>
+      <div class="schedule-legend" aria-label="일정 분류">${createScheduleLegend()}</div>
+    </div>
+    <div class="calendar-board">
+      <div class="calendar-weekdays" aria-hidden="true">
+        <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
       </div>
-    </div>
-    <div class="calendar-weekdays" aria-hidden="true">
-      <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
-    </div>
-    <div class="calendar-grid" role="grid" aria-label="${escapeHtml(monthLabel)} 일정 달력">
-      ${cells.join("")}
+      <div class="calendar-grid" role="grid" aria-label="${escapeHtml(monthLabel)} 일정 달력">
+        ${cells.join("")}
+      </div>
     </div>
     <div class="calendar-agenda">
       <div class="calendar-agenda-head">
@@ -641,7 +694,7 @@ function renderList() {
   listElement.classList.toggle("is-calendar", state.activeView === "sessions");
 
   if (!state.currentUser) {
-    listElement.replaceChildren(createLockedState("자료실, 모임 일정, 질문, 멤버 목록은 로그인 후 이용할 수 있습니다."));
+    listElement.replaceChildren(createLockedState("자료실, 일정, 질문, 멤버 목록은 로그인 후 이용할 수 있습니다."));
     return;
   }
 
@@ -709,7 +762,7 @@ function renderStats() {
 }
 
 function setView(view, { updateUrl = true } = {}) {
-  if (!requireAuth("자료, 모임, 질문, 멤버 목록은 로그인 후 이용할 수 있습니다.")) {
+  if (!requireAuth("자료, 일정, 질문, 멤버 목록은 로그인 후 이용할 수 있습니다.")) {
     return false;
   }
 
@@ -723,7 +776,9 @@ function setView(view, { updateUrl = true } = {}) {
   }
 
   state.activeView = view;
+  document.body.dataset.view = view;
   state.query = searchInput.value;
+  searchInput.placeholder = view === "sessions" ? "일정명, 목적, 장소 검색" : "프롬프트, 자동화, 문서 요약";
   updatePageHeading(view);
 
   tabs.forEach((tab) => {
@@ -752,7 +807,7 @@ function updateHeaderState() {
 }
 
 function openSessionDialog() {
-  if (!requireAuth("일정 추가는 로그인 후 이용할 수 있습니다.")) {
+  if (!requireAuth("일정 등록은 로그인 후 이용할 수 있습니다.")) {
     return;
   }
 
@@ -905,6 +960,7 @@ async function handleSessionSubmit(event) {
       endTime,
       location: String(formData.get("location") || "").trim(),
       title: String(formData.get("title") || "").trim(),
+      purpose: String(formData.get("purpose") || "").trim(),
       summary: String(formData.get("summary") || "").trim(),
       tag: String(formData.get("tag") || "").trim(),
       owner: state.currentUser?.name || "Ctrl + AI 멤버"
@@ -916,7 +972,7 @@ async function handleSessionSubmit(event) {
     closeSessionDialog();
     searchInput.value = "";
     state.query = "";
-    navigateToRoute("/sessions", { scroll: true });
+    navigateToRoute("/schedule", { scroll: true });
     renderStats();
   } catch (error) {
     console.warn("Session could not be saved.", error);

@@ -109,13 +109,14 @@ const createdSession = await vm.runInContext(`createSession({
   startTime: "10:00",
   endTime: "11:00",
   title: "AI 회의록 자동화 실습",
+  purpose: "회의록 자동화 적용 방안을 확인합니다.",
   summary: "회의록 요약 프롬프트를 실습합니다.",
-  tag: "실습",
+  tag: "회의",
   location: "3층 회의실",
   owner: "관리자"
 })`, context);
 
-if (createdSession.title !== "AI 회의록 자동화 실습" || createdSession.startTime !== "10:00") {
+if (createdSession.title !== "AI 회의록 자동화 실습" || createdSession.startTime !== "10:00" || createdSession.purpose !== "회의록 자동화 적용 방안을 확인합니다.") {
   throw new Error("Local preview session creation did not return the expected schedule.");
 }
 
