@@ -1,0 +1,187 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwnerUid(uid) {
+      return isSignedIn() && uid == request.auth.uid;
+    }
+
+    function currentMember() {
+      return get(/databases/$(database)/documents/members/$(request.auth.uid));
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/members/$(request.auth.uid))
+        && currentMember().data.role == "admin"
+        && currentMember().data.status == "active";
+    }
+
+    match /resources/{document} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    match /sessions/{document} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidSession();
+      allow update, delete: if false;
+    }
+
+    match /site/{document} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    match /questions/{document} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidQuestion();
+      allow update, delete: if false;
+    }
+
+    match /members/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+        && userId == request.auth.uid
+        && isValidMemberCreate();
+      allow update: if isAdmin()
+        && isValidMemberUpdate();
+      allow delete: if false;
+    }
+
+    function isValidSession() {
+      return request.resource.data.keys().hasOnly([
+        "date",
+        "startTime",
+        "endTime",
+        "title",
+        "summary",
+        "tag",
+        "location",
+        "owner",
+        "ownerUid",
+        "status",
+        "createdAt"
+      ])
+      && request.resource.data.date is string
+      && request.resource.data.date.matches("^\\d{4}-\\d{2}-\\d{2}$")
+      && request.resource.data.startTime is string
+      && request.resource.data.startTime.matches("^\\d{2}:\\d{2}$")
+      && request.resource.data.endTime is string
+      && request.resource.data.endTime.matches("^\\d{2}:\\d{2}$")
+      && request.resource.data.endTime > request.resource.data.startTime
+      && request.resource.data.title is string
+      && request.resource.data.title.size() > 0
+      && request.resource.data.title.size() <= 70
+      && request.resource.data.summary is string
+      && request.resource.data.summary.size() > 0
+      && request.resource.data.summary.size() <= 220
+      && request.resource.data.tag is string
+      && request.resource.data.tag.size() > 0
+      && request.resource.data.tag.size() <= 20
+      && request.resource.data.location is string
+      && request.resource.data.location.size() <= 40
+      && request.resource.data.owner is string
+      && request.resource.data.owner.size() > 0
+      && request.resource.data.owner.size() <= 40
+      && isOwnerUid(request.resource.data.ownerUid)
+      && request.resource.data.status == "scheduled"
+      && request.resource.data.createdAt == request.time;
+    }
+
+    function isValidQuestion() {
+      return request.resource.data.keys().hasOnly([
+        "title",
+        "summary",
+        "tag",
+        "owner",
+        "ownerUid",
+        "status",
+        "createdAt"
+      ])
+      && request.resource.data.title is string
+      && request.resource.data.title.size() > 0
+      && request.resource.data.title.size() <= 70
+      && request.resource.data.summary is string
+      && request.resource.data.summary.size() > 0
+      && request.resource.data.summary.size() <= 180
+      && request.resource.data.tag is string
+      && request.resource.data.tag.size() > 0
+      && request.resource.data.tag.size() <= 20
+      && request.resource.data.owner is string
+      && request.resource.data.owner.size() > 0
+      && request.resource.data.owner.size() <= 40
+      && isOwnerUid(request.resource.data.ownerUid)
+      && request.resource.data.status == "open"
+      && request.resource.data.createdAt == request.time;
+    }
+
+    function hasValidMemberFields() {
+      return request.resource.data.userUid is string
+      && request.resource.data.username is string
+      && request.resource.data.username.matches("^[A-Za-z0-9._-]{3,24}$")
+      && request.resource.data.name is string
+      && request.resource.data.name.size() > 0
+      && request.resource.data.name.size() <= 20
+      && request.resource.data.team is string
+      && request.resource.data.team.size() > 0
+      && request.resource.data.team.size() <= 40
+      && request.resource.data.email is string
+      && request.resource.data.email.size() > 0
+      && request.resource.data.email.size() <= 80
+      && request.resource.data.interest is string
+      && request.resource.data.interest.size() > 0
+      && request.resource.data.interest.size() <= 20
+      && request.resource.data.message is string
+      && request.resource.data.message.size() <= 160
+      && request.resource.data.status in ["active", "pending", "paused"]
+      && request.resource.data.role in ["member", "admin"];
+    }
+
+    function isValidMemberCreate() {
+      return request.resource.data.keys().hasOnly([
+        "userUid",
+        "username",
+        "name",
+        "team",
+        "email",
+        "interest",
+        "message",
+        "status",
+        "role",
+        "createdAt"
+      ])
+      && isOwnerUid(request.resource.data.userUid)
+      && request.auth.token.email == request.resource.data.username + "@ctrl-ai.local"
+      && hasValidMemberFields()
+      && request.resource.data.status == "active"
+      && request.resource.data.role == "member"
+      && request.resource.data.createdAt == request.time;
+    }
+
+    function isValidMemberUpdate() {
+      return request.resource.data.keys().hasOnly([
+        "userUid",
+        "username",
+        "name",
+        "team",
+        "email",
+        "interest",
+        "message",
+        "status",
+        "role",
+        "createdAt",
+        "updatedAt"
+      ])
+      && resource.data.userUid == request.resource.data.userUid
+      && resource.data.username == request.resource.data.username
+      && resource.data.createdAt == request.resource.data.createdAt
+      && hasValidMemberFields()
+      && request.resource.data.updatedAt == request.time;
+    }
+  }
+}

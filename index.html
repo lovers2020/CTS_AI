@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#11131a">
+    <meta
+      name="description"
+      content="Ctrl + AI는 AI 활용법과 실무 적용 사례를 공유하는 사내 동호회입니다."
+    >
+    <title>Ctrl + AI | 사내 AI 활용 동호회</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&family=Noto+Sans+KR:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    >
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body class="auth-screen-active" data-auth="signed-out">
+    <section class="auth-screen" data-auth-screen aria-labelledby="auth-title">
+      <div class="auth-showcase" aria-hidden="true">
+        <div class="auth-showcase-top">
+          <span class="auth-showcase-mark">⌘</span>
+          <span>CTRL + AI / COMPANY LAB</span>
+        </div>
+        <div class="auth-showcase-copy">
+          <p class="auth-kicker">WORK BETTER, TOGETHER</p>
+          <h2>AI를 아는 것에서<br>업무에 쓰는 것으로.</h2>
+          <p>
+            검증한 프롬프트, 작게 성공한 자동화, 실패에서 배운 기준까지.
+            우리 회사의 AI 활용법을 함께 축적합니다.
+          </p>
+        </div>
+        <div class="auth-proof">
+          <div><strong>24</strong><span>검증된 업무 자료</span></div>
+          <div><strong>36</strong><span>함께 실험하는 멤버</span></div>
+          <div><strong>8</strong><span>예정된 실습 세션</span></div>
+        </div>
+      </div>
+      <div class="auth-card">
+        <div class="auth-card-head">
+          <div class="auth-logo" aria-hidden="true">⬡</div>
+          <h1 id="auth-title">Ctrl + AI</h1>
+          <p>Ctrl + AI 계정으로 로그인하세요</p>
+        </div>
+
+        <form class="auth-form" data-login-form>
+          <label>
+            <span>아이디</span>
+            <div class="auth-field">
+              <span aria-hidden="true">#</span>
+              <input name="username" autocomplete="username" required minlength="3" maxlength="24" pattern="[A-Za-z0-9._-]+" placeholder="아이디 입력">
+            </div>
+          </label>
+          <label>
+            <span>비밀번호</span>
+            <div class="auth-field">
+              <span aria-hidden="true">□</span>
+              <input name="password" type="password" autocomplete="current-password" required placeholder="비밀번호 (6자 이상)">
+            </div>
+          </label>
+          <button class="auth-submit" type="submit">
+            로그인
+            <span aria-hidden="true">→</span>
+          </button>
+          <p class="form-status" data-login-status role="status" aria-live="polite"></p>
+        </form>
+
+        <form class="auth-form" data-signup-form hidden>
+          <div class="auth-signup-grid">
+            <label>
+              <span>아이디</span>
+              <div class="auth-field">
+                <span aria-hidden="true">#</span>
+                <input name="username" autocomplete="username" required minlength="3" maxlength="24" pattern="[A-Za-z0-9._-]+" placeholder="영문, 숫자, . _ -">
+              </div>
+            </label>
+            <label>
+              <span>이름</span>
+              <div class="auth-field">
+                <span aria-hidden="true">□</span>
+                <input name="name" autocomplete="name" required maxlength="20" placeholder="홍길동">
+              </div>
+            </label>
+            <label>
+              <span>부서/팀</span>
+              <div class="auth-field">
+                <span aria-hidden="true">#</span>
+                <input name="team" required maxlength="40" placeholder="기획팀">
+              </div>
+            </label>
+            <label>
+              <span>회사 메일</span>
+              <div class="auth-field">
+                <span aria-hidden="true">@</span>
+                <input name="email" type="email" autocomplete="email" required maxlength="80" placeholder="name@company.com">
+              </div>
+            </label>
+            <label>
+              <span>관심 분야</span>
+              <div class="auth-field">
+                <span aria-hidden="true">+</span>
+                <select name="interest" required>
+                  <option value="">선택</option>
+                  <option>프롬프트</option>
+                  <option>업무 자동화</option>
+                  <option>문서/보고서</option>
+                  <option>이미지/콘텐츠</option>
+                  <option>데이터 분석</option>
+                </select>
+              </div>
+            </label>
+            <label>
+              <span>비밀번호</span>
+              <div class="auth-field">
+                <span aria-hidden="true">□</span>
+                <input name="password" type="password" autocomplete="new-password" required minlength="6" maxlength="40" placeholder="6자 이상">
+              </div>
+            </label>
+            <label>
+              <span>비밀번호 확인</span>
+              <div class="auth-field">
+                <span aria-hidden="true">□</span>
+                <input name="confirmPassword" type="password" autocomplete="new-password" required minlength="6" maxlength="40" placeholder="다시 입력">
+              </div>
+            </label>
+          </div>
+          <label>
+            <span>함께 해보고 싶은 AI 활용</span>
+            <textarea name="message" maxlength="160" rows="3" placeholder="예: 주간 보고서 초안 자동화"></textarea>
+          </label>
+          <button class="auth-submit" type="submit">
+            가입하기
+            <span aria-hidden="true">→</span>
+          </button>
+          <p class="form-status" data-signup-status role="status" aria-live="polite"></p>
+        </form>
+
+        <div class="auth-switch">
+          <p data-login-helper>아직 계정이 없으신가요?</p>
+          <button type="button" data-login-join>회원가입 하러가기</button>
+          <p data-signup-helper hidden>이미 계정이 있으신가요?</p>
+          <button type="button" data-login-back hidden>로그인 하러가기</button>
+        </div>
+
+        <div class="auth-intro">
+          <strong>Ctrl + AI 소개</strong>
+          <p>
+            업무에 바로 쓰이는 AI 활용법을 함께 실험하고, 검증한 프롬프트와 자동화 사례를 나누는 사내 동호회입니다.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <div class="app-shell" data-app-shell hidden>
+    <header class="site-header" data-header>
+      <a class="brand" href="/" aria-label="Ctrl + AI 홈" data-route>
+        <span class="brand-mark" aria-hidden="true">⌘</span>
+        <span>Ctrl + AI</span>
+      </a>
+      <nav class="site-nav" id="site-nav" aria-label="주요 메뉴">
+        <a href="/resources" data-route data-view="resources" data-protected-link>자료실</a>
+        <a href="/sessions" data-route data-view="sessions" data-protected-link>모임</a>
+        <a href="/questions" data-route data-view="questions" data-protected-link>질문</a>
+        <a href="/members" data-route data-view="members" data-protected-link>멤버</a>
+        <a href="/about" data-route>소개</a>
+      </nav>
+      <div class="auth-panel">
+        <div class="auth-user" data-auth-user hidden>
+          <span class="auth-avatar" data-auth-initial aria-hidden="true">C</span>
+          <div>
+            <strong data-auth-name>Ctrl + AI</strong>
+            <span data-auth-team>로그인 중</span>
+          </div>
+        </div>
+        <button class="auth-button" type="button" data-open-login>로그인</button>
+        <button class="auth-button auth-button-muted" type="button" data-logout hidden>로그아웃</button>
+      </div>
+      <button class="icon-button menu-toggle" type="button" aria-label="메뉴 열기" aria-controls="site-nav" aria-expanded="false" data-menu-toggle>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+      </button>
+    </header>
+
+    <main id="top" tabindex="-1">
+      <section class="hero" aria-labelledby="hero-title" data-page-section="home">
+        <canvas class="hero-canvas" data-hero-canvas aria-hidden="true"></canvas>
+        <div class="hero-shade" aria-hidden="true"></div>
+        <div class="hero-inner">
+          <p class="eyebrow">Ctrl + AI · Company AI Club</p>
+          <h1 id="hero-title">일의 방식을 바꾸는<br><span>가장 실용적인 AI 실험실</span></h1>
+          <p class="hero-copy">
+            업무에 바로 쓰이는 AI 활용법을 같이 실험하고, 검증한 프롬프트와 자동화 사례를 나누는 사내 동호회.
+          </p>
+          <div class="hero-actions" aria-label="빠른 이동">
+            <a class="button button-primary" href="/resources" data-route data-view="resources" data-protected-link>
+              <span class="button-icon" aria-hidden="true">↳</span>
+              자료 둘러보기
+            </a>
+            <a class="button button-secondary" href="/sessions" data-route data-view="sessions" data-protected-link>
+              <span class="button-icon" aria-hidden="true">□</span>
+              모임 일정
+            </a>
+          </div>
+        </div>
+        <div class="hero-workflow" aria-label="Ctrl + AI 업무 적용 흐름">
+          <div class="workflow-head">
+            <span>LIVE WORKFLOW</span>
+            <span class="workflow-status"><i></i> LAB ACTIVE</span>
+          </div>
+          <div class="workflow-stage">
+            <div class="workflow-number">01</div>
+            <div><strong>반복 업무 선택</strong><span>주간 보고서 초안</span></div>
+            <span class="workflow-chip">INPUT</span>
+          </div>
+          <div class="workflow-line" aria-hidden="true"></div>
+          <div class="workflow-stage is-accent">
+            <div class="workflow-number">02</div>
+            <div><strong>프롬프트 실험</strong><span>맥락 · 형식 · 검증 기준</span></div>
+            <span class="workflow-chip">TEST</span>
+          </div>
+          <div class="workflow-line" aria-hidden="true"></div>
+          <div class="workflow-stage">
+            <div class="workflow-number">03</div>
+            <div><strong>팀에 공유</strong><span>템플릿과 체크리스트</span></div>
+            <span class="workflow-chip">SHARE</span>
+          </div>
+          <div class="workflow-foot">
+            <span>이번 달 절감 목표</span>
+            <strong>12.5 HOURS / WEEK</strong>
+          </div>
+        </div>
+        <div class="hero-metrics" aria-label="동호회 요약">
+          <div>
+            <strong data-stat="resources">24</strong>
+            <span>공유 자료</span>
+          </div>
+          <div>
+            <strong data-stat="sessions">8</strong>
+            <span>예정 세션</span>
+          </div>
+          <div>
+            <strong data-stat="members">36</strong>
+            <span>참여 멤버</span>
+          </div>
+          <div>
+            <strong data-stat="questions">12</strong>
+            <span>오픈 질문</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="spotlight-section" aria-labelledby="spotlight-title" data-page-section="home">
+        <div class="section-inner">
+          <div class="section-heading">
+            <p class="eyebrow">This Week</p>
+            <h2 id="spotlight-title">이번 주 공유 주제</h2>
+          </div>
+          <div class="spotlight-grid" data-spotlight-list></div>
+        </div>
+      </section>
+
+      <section class="knowledge-section" id="knowledge" aria-labelledby="knowledge-title" data-page-section="data" hidden>
+        <div class="section-inner knowledge-layout">
+          <div class="knowledge-main">
+            <div class="section-heading">
+              <p class="eyebrow">Knowledge Desk</p>
+              <h2 id="knowledge-title">AI 활용 자료실</h2>
+            </div>
+
+            <div class="desk-toolbar">
+              <nav class="tabs" aria-label="자료 메뉴">
+                <a class="tab is-active" href="/resources" data-route data-view="resources">
+                  자료
+                </a>
+                <a class="tab" href="/sessions" data-route data-view="sessions" id="sessions">
+                  모임
+                </a>
+                <a class="tab" href="/questions" data-route data-view="questions" id="board">
+                  질문
+                </a>
+                <a class="tab" href="/members" data-route data-view="members" id="members">
+                  멤버
+                </a>
+              </nav>
+              <label class="search">
+                <span class="sr-only">자료 검색</span>
+                <span class="search-icon" aria-hidden="true">⌕</span>
+                <input data-search type="search" placeholder="프롬프트, 자동화, 문서 요약">
+              </label>
+              <button class="button button-primary toolbar-action" type="button" data-open-session hidden>
+                <span class="button-icon" aria-hidden="true">＋</span>
+                일정 추가
+              </button>
+            </div>
+
+            <div class="list-grid" data-list aria-live="polite"></div>
+          </div>
+
+          <aside class="club-panel" aria-labelledby="challenge-title">
+            <p class="eyebrow">Monthly Lab</p>
+            <h2 id="challenge-title">6월 실험실</h2>
+            <p>
+              반복 보고서 초안 작성, 회의록 요약, 고객 문의 분류를 팀별로 실험하고 결과를 모읍니다.
+            </p>
+            <div class="progress-block">
+              <div>
+                <span>실험 진행률</span>
+                <strong>68%</strong>
+              </div>
+              <progress max="100" value="68">68%</progress>
+            </div>
+            <button class="button button-dark" type="button" data-open-question>
+              <span class="button-icon" aria-hidden="true">＋</span>
+              질문 등록
+            </button>
+          </aside>
+        </div>
+      </section>
+
+      <section class="principles-section" aria-labelledby="principles-title" data-page-section="home about">
+        <div class="section-inner principles-layout">
+          <div class="section-heading">
+            <p class="eyebrow">Operating Rhythm</p>
+            <h2 id="principles-title">함께 나누는 방식</h2>
+          </div>
+          <ol class="principle-list">
+            <li>
+              <span>01</span>
+              <strong>업무 맥락 먼저</strong>
+              <p>좋은 도구보다 반복되는 실제 업무를 먼저 고릅니다.</p>
+            </li>
+            <li>
+              <span>02</span>
+              <strong>작게 실험</strong>
+              <p>한 시간 안에 검증 가능한 프롬프트와 자동화만 공유합니다.</p>
+            </li>
+            <li>
+              <span>03</span>
+              <strong>재사용 가능하게</strong>
+              <p>결과물은 템플릿, 체크리스트, 짧은 예시로 남깁니다.</p>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="join-section" id="join" aria-labelledby="join-title" data-page-section="home about">
+        <div class="section-inner join-layout">
+          <div>
+            <p class="eyebrow">About Ctrl + AI</p>
+            <h2 id="join-title">AI를 업무 언어로 바꾸는 사내 실험실</h2>
+            <p>
+              Ctrl + AI는 AI를 잘 아는 사람만을 위한 모임이 아니라, 내 업무를 더 낫게 만들고 싶은 구성원이 함께 배우는 공간입니다.
+            </p>
+          </div>
+          <div class="intro-grid">
+            <article>
+              <span>01</span>
+              <strong>정보 공유</strong>
+              <p>프롬프트, 자동화, 문서 작성, 데이터 분석 사례를 짧고 재사용 가능한 형태로 모읍니다.</p>
+            </article>
+            <article>
+              <span>02</span>
+              <strong>실무 실험</strong>
+              <p>반복 업무를 작게 고르고, AI로 줄일 수 있는 시간을 실제 업무 맥락에서 검증합니다.</p>
+            </article>
+            <article>
+              <span>03</span>
+              <strong>함께 성장</strong>
+              <p>성공 사례뿐 아니라 실패한 시도와 주의할 점까지 나누며 팀 전체의 AI 활용 감각을 키웁니다.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <span>Ctrl + AI</span>
+      <span>AI 활용법 정보 공유 사내 동호회</span>
+    </footer>
+
+    <dialog class="question-dialog" data-question-dialog aria-labelledby="question-title">
+      <form method="dialog" class="dialog-shell" data-question-form>
+        <div class="dialog-head">
+          <h2 id="question-title">질문 등록</h2>
+          <button class="icon-button" type="button" aria-label="닫기" data-close-question>×</button>
+        </div>
+        <label>
+          <span>제목</span>
+          <input name="title" required maxlength="70" placeholder="예: 회의록 요약 프롬프트 추천">
+        </label>
+        <label>
+          <span>내용</span>
+          <textarea name="summary" required maxlength="180" rows="4" placeholder="상황과 원하는 결과를 짧게 적어주세요."></textarea>
+        </label>
+        <label>
+          <span>태그</span>
+          <input name="tag" maxlength="20" placeholder="문서, 자동화, 이미지">
+        </label>
+        <div class="dialog-actions">
+          <button class="button button-secondary" type="button" data-close-question>취소</button>
+          <button class="button button-primary" type="submit">
+            <span class="button-icon" aria-hidden="true">＋</span>
+            등록
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+
+    <dialog class="question-dialog session-dialog" data-session-dialog aria-labelledby="session-dialog-title">
+      <form method="dialog" class="dialog-shell" data-session-form>
+        <div class="dialog-head">
+          <h2 id="session-dialog-title">일정 추가</h2>
+          <button class="icon-button" type="button" aria-label="닫기" data-close-session>×</button>
+        </div>
+        <div class="session-edit-grid">
+          <label>
+            <span>날짜</span>
+            <input name="date" type="date" required>
+          </label>
+          <label>
+            <span>시작 시간</span>
+            <input name="startTime" type="time" required>
+          </label>
+          <label>
+            <span>종료 시간</span>
+            <input name="endTime" type="time" required>
+          </label>
+          <label>
+            <span>장소</span>
+            <input name="location" maxlength="40" placeholder="예: 3층 회의실 / 온라인">
+          </label>
+        </div>
+        <label>
+          <span>목적 / 제목</span>
+          <input name="title" required maxlength="70" placeholder="예: AI 회의록 자동화 실습">
+        </label>
+        <label>
+          <span>내용</span>
+          <textarea name="summary" required maxlength="220" rows="4" placeholder="일정 목적, 준비물, 진행 방식 등을 입력하세요."></textarea>
+        </label>
+        <label>
+          <span>분류</span>
+          <input name="tag" maxlength="20" placeholder="실습, 공유회, 스터디">
+        </label>
+        <p class="form-status" data-session-status role="status" aria-live="polite"></p>
+        <div class="dialog-actions">
+          <button class="button button-secondary" type="button" data-close-session>취소</button>
+          <button class="button button-primary" type="submit">
+            <span class="button-icon" aria-hidden="true">＋</span>
+            저장
+          </button>
+        </div>
+      </form>
+    </dialog>
+    <dialog class="question-dialog member-dialog" data-member-dialog aria-labelledby="member-dialog-title">
+      <form method="dialog" class="dialog-shell" data-member-form>
+        <div class="dialog-head">
+          <h2 id="member-dialog-title" data-member-dialog-title>멤버 정보 수정</h2>
+          <button class="icon-button" type="button" aria-label="닫기" data-close-member>×</button>
+        </div>
+        <input type="hidden" name="memberId">
+        <div class="member-edit-grid">
+          <label>
+            <span>이름</span>
+            <input name="name" required maxlength="20" placeholder="홍길동">
+          </label>
+          <label>
+            <span>부서/팀</span>
+            <input name="team" required maxlength="40" placeholder="기획팀">
+          </label>
+          <label>
+            <span>회사 메일</span>
+            <input name="email" type="email" required maxlength="80" placeholder="name@company.com">
+          </label>
+          <label>
+            <span>관심 분야</span>
+            <select name="interest" required>
+              <option>프롬프트</option>
+              <option>업무 자동화</option>
+              <option>문서/보고서</option>
+              <option>이미지/콘텐츠</option>
+              <option>데이터 분석</option>
+            </select>
+          </label>
+          <label>
+            <span>상태</span>
+            <select name="status" required>
+              <option value="active">활동 중</option>
+              <option value="pending">승인 대기</option>
+              <option value="paused">일시 중지</option>
+            </select>
+          </label>
+          <label>
+            <span>권한</span>
+            <select name="role" required>
+              <option value="member">member</option>
+              <option value="admin">admin</option>
+            </select>
+          </label>
+        </div>
+        <label>
+          <span>메시지/메모</span>
+          <textarea name="message" maxlength="160" rows="3" placeholder="멤버 관심사나 운영 메모"></textarea>
+        </label>
+        <p class="form-status" data-member-status role="status" aria-live="polite"></p>
+        <div class="dialog-actions">
+          <button class="button button-secondary" type="button" data-close-member>취소</button>
+          <button class="button button-primary" type="submit">
+            <span class="button-icon" aria-hidden="true">✓</span>
+            저장
+          </button>
+        </div>
+      </form>
+    </dialog>
+    </div>
+
+    <script src="/scripts/firebase.js"></script>
+    <script src="/scripts/app.js"></script>
+  </body>
+</html>
