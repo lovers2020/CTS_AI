@@ -10,6 +10,20 @@ service cloud.firestore {
       return isSignedIn() && uid == request.auth.uid;
     }
 
+    function isResourceOwner() {
+      return isSignedIn() && resource.data.ownerUid == request.auth.uid;
+    }
+
+    function canManageResource() {
+      return isAdmin() || isResourceOwner();
+    }
+
+    function isQuestionOwner(questionId) {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/questions/$(questionId))
+        && get(/databases/$(database)/documents/questions/$(questionId)).data.ownerUid == request.auth.uid;
+    }
+
     function currentMember() {
       return get(/databases/$(database)/documents/members/$(request.auth.uid));
     }
@@ -23,7 +37,16 @@ service cloud.firestore {
 
     match /resources/{document} {
       allow read: if isSignedIn();
-      allow write: if false;
+      allow create: if isSignedIn() && isValidResource();
+      allow update: if canManageResource() && isValidResourceUpdate();
+      allow delete: if canManageResource();
+
+      match /comments/{commentId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() && isValidComment();
+        allow update: if canManageResource() && isValidCommentUpdate();
+        allow delete: if canManageResource();
+      }
     }
 
     match /sessions/{document} {
@@ -40,7 +63,15 @@ service cloud.firestore {
     match /questions/{document} {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && isValidQuestion();
-      allow update, delete: if false;
+      allow update: if canManageResource() && isValidQuestionUpdate();
+      allow delete: if canManageResource();
+
+      match /comments/{commentId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() && isValidComment();
+        allow update: if canManageResource() && isValidCommentUpdate();
+        allow delete: if canManageResource() || isQuestionOwner(document);
+      }
     }
 
     match /members/{userId} {
@@ -51,6 +82,102 @@ service cloud.firestore {
       allow update: if isAdmin()
         && isValidMemberUpdate();
       allow delete: if false;
+    }
+
+    function isValidResource() {
+      return request.resource.data.keys().hasOnly([
+        "title",
+        "body",
+        "summary",
+        "tag",
+        "owner",
+        "ownerUid",
+        "status",
+        "href",
+        "fileUrl",
+        "filePath",
+        "fileName",
+        "fileType",
+        "fileSize",
+        "createdAt"
+      ])
+      && request.resource.data.title is string
+      && request.resource.data.title.size() > 0
+      && request.resource.data.title.size() <= 80
+      && request.resource.data.body is string
+      && request.resource.data.body.size() <= 10000
+      && request.resource.data.summary is string
+      && request.resource.data.summary.size() <= 260
+      && request.resource.data.tag is string
+      && request.resource.data.tag.size() > 0
+      && request.resource.data.tag.size() <= 24
+      && request.resource.data.owner is string
+      && request.resource.data.owner.size() > 0
+      && request.resource.data.owner.size() <= 40
+      && isOwnerUid(request.resource.data.ownerUid)
+      && request.resource.data.status == "published"
+      && request.resource.data.href is string
+      && request.resource.data.href.size() <= 1000
+      && request.resource.data.fileUrl is string
+      && request.resource.data.fileUrl.size() <= 1000
+      && request.resource.data.filePath is string
+      && request.resource.data.filePath.size() <= 300
+      && request.resource.data.fileName is string
+      && request.resource.data.fileName.size() <= 160
+      && request.resource.data.fileType is string
+      && request.resource.data.fileType.size() <= 120
+      && request.resource.data.fileSize is int
+      && request.resource.data.fileSize >= 0
+      && request.resource.data.fileSize <= 20 * 1024 * 1024
+      && request.resource.data.createdAt == request.time;
+    }
+
+    function isValidResourceUpdate() {
+      return request.resource.data.keys().hasOnly([
+        "title",
+        "body",
+        "summary",
+        "tag",
+        "owner",
+        "ownerUid",
+        "status",
+        "href",
+        "fileUrl",
+        "filePath",
+        "fileName",
+        "fileType",
+        "fileSize",
+        "createdAt",
+        "updatedAt"
+      ])
+      && request.resource.data.title is string
+      && request.resource.data.title.size() > 0
+      && request.resource.data.title.size() <= 80
+      && request.resource.data.body is string
+      && request.resource.data.body.size() <= 10000
+      && request.resource.data.summary is string
+      && request.resource.data.summary.size() <= 260
+      && request.resource.data.tag is string
+      && request.resource.data.tag.size() > 0
+      && request.resource.data.tag.size() <= 24
+      && request.resource.data.owner == resource.data.owner
+      && request.resource.data.ownerUid == resource.data.ownerUid
+      && request.resource.data.status == resource.data.status
+      && request.resource.data.href is string
+      && request.resource.data.href.size() <= 1000
+      && request.resource.data.fileUrl is string
+      && request.resource.data.fileUrl.size() <= 1000
+      && request.resource.data.filePath is string
+      && request.resource.data.filePath.size() <= 300
+      && request.resource.data.fileName is string
+      && request.resource.data.fileName.size() <= 160
+      && request.resource.data.fileType is string
+      && request.resource.data.fileType.size() <= 120
+      && request.resource.data.fileSize is int
+      && request.resource.data.fileSize >= 0
+      && request.resource.data.fileSize <= 20 * 1024 * 1024
+      && request.resource.data.createdAt == resource.data.createdAt
+      && request.resource.data.updatedAt == request.time;
     }
 
     function isValidSession() {
@@ -79,10 +206,8 @@ service cloud.firestore {
       && request.resource.data.title.size() > 0
       && request.resource.data.title.size() <= 70
       && request.resource.data.purpose is string
-      && request.resource.data.purpose.size() > 0
       && request.resource.data.purpose.size() <= 100
       && request.resource.data.summary is string
-      && request.resource.data.summary.size() > 0
       && request.resource.data.summary.size() <= 220
       && request.resource.data.tag is string
       && request.resource.data.tag.size() > 0
@@ -122,6 +247,71 @@ service cloud.firestore {
       && isOwnerUid(request.resource.data.ownerUid)
       && request.resource.data.status == "open"
       && request.resource.data.createdAt == request.time;
+    }
+
+    function hasValidQuestionEditableFields() {
+      return request.resource.data.title is string
+      && request.resource.data.title.size() > 0
+      && request.resource.data.title.size() <= 70
+      && request.resource.data.summary is string
+      && request.resource.data.summary.size() > 0
+      && request.resource.data.summary.size() <= 180
+      && request.resource.data.tag is string
+      && request.resource.data.tag.size() > 0
+      && request.resource.data.tag.size() <= 20;
+    }
+
+    function isValidQuestionUpdate() {
+      return request.resource.data.keys().hasOnly([
+        "title",
+        "summary",
+        "tag",
+        "owner",
+        "ownerUid",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ])
+      && hasValidQuestionEditableFields()
+      && request.resource.data.owner == resource.data.owner
+      && request.resource.data.ownerUid == resource.data.ownerUid
+      && request.resource.data.status == resource.data.status
+      && request.resource.data.createdAt == resource.data.createdAt
+      && request.resource.data.updatedAt == request.time;
+    }
+
+    function isValidComment() {
+      return request.resource.data.keys().hasOnly([
+        "body",
+        "owner",
+        "ownerUid",
+        "createdAt"
+      ])
+      && request.resource.data.body is string
+      && request.resource.data.body.size() > 0
+      && request.resource.data.body.size() <= 400
+      && request.resource.data.owner is string
+      && request.resource.data.owner.size() > 0
+      && request.resource.data.owner.size() <= 40
+      && isOwnerUid(request.resource.data.ownerUid)
+      && request.resource.data.createdAt == request.time;
+    }
+
+    function isValidCommentUpdate() {
+      return request.resource.data.keys().hasOnly([
+        "body",
+        "owner",
+        "ownerUid",
+        "createdAt",
+        "updatedAt"
+      ])
+      && request.resource.data.body is string
+      && request.resource.data.body.size() > 0
+      && request.resource.data.body.size() <= 400
+      && request.resource.data.owner == resource.data.owner
+      && request.resource.data.ownerUid == resource.data.ownerUid
+      && request.resource.data.createdAt == resource.data.createdAt
+      && request.resource.data.updatedAt == request.time;
     }
 
     function hasValidMemberFields() {
