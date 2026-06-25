@@ -1790,9 +1790,21 @@ button:disabled,
   min-height: 0;
   overflow: auto;
 }
+.notion-page-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 28px;
+  align-items: center;
+  gap: 4px;
+  border-radius: 8px;
+}
+.notion-page-row.active {
+  background: #e5ebf4;
+}
+.notion-page-row.active .notion-page-link {
+  color: var(--ink);
+}
 .notion-page-link,
-.notion-add-page,
-.notion-folder {
+.notion-add-page {
   width: 100%;
   min-height: 38px;
   display: flex;
@@ -1812,10 +1824,6 @@ button:disabled,
   white-space: nowrap;
   color: #33435c;
 }
-.notion-page-link.active {
-  background: #e5ebf4;
-  color: var(--ink);
-}
 .notion-add-page,
 .notion-empty-line {
   color: #91a0b8;
@@ -1827,7 +1835,21 @@ button:disabled,
   margin: 10px 0;
   background: rgba(107, 119, 140, 0.15);
 }
-.notion-folder { color: #3250a1; }
+.notion-row-delete {
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #9aa7ba;
+  font-weight: 900;
+}
+.notion-row-delete:hover,
+.notion-row-delete:focus-visible {
+  background: rgba(229, 72, 77, 0.12);
+  color: #b42318;
+  outline: none;
+}
 .notion-document {
   min-width: 0;
   min-height: 0;
@@ -1864,6 +1886,9 @@ button:disabled,
   white-space: nowrap;
 }
 .notion-doc-actions { display: flex; align-items: center; gap: 8px; }
+.mini-action.danger { color: #b42318; background: rgba(229, 72, 77, 0.1); }
+.mini-action.danger:hover,
+.mini-action.danger:focus-visible { background: #b42318; color: white; }
 .notion-doc-body {
   width: min(760px, calc(100% - 48px));
   margin: 42px auto 28px;
@@ -1965,10 +1990,12 @@ button:disabled,
 }
 .empty-doc { display: grid; place-items: center; }
 .doc-empty-state { display: grid; place-items: center; gap: 12px; text-align: center; }
+.empty-doc-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
 .doc-empty-state span { font-size: 2rem; color: #a19bb3; }
 .doc-empty-state h1 { margin: 0; font-size: 2.4rem; letter-spacing: -0.06em; }
 @media (max-width: 860px) {
   .notion-resource-page { grid-template-columns: 1fr; }
+  .notion-page-row { grid-template-columns: minmax(0, 1fr) 32px; }
   .notion-sidebar { max-height: 260px; border-right: 0; border-bottom: 1px solid rgba(107,119,140,.18); }
   .notion-document { max-height: none; }
   .resource-comment-form { grid-template-columns: 1fr; }

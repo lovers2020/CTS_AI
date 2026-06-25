@@ -16,11 +16,14 @@ import {
   getDoc,
   getDocs,
   getFirestore,
+  query,
   serverTimestamp,
   setDoc,
-  updateDoc
+  updateDoc,
+  where
 } from "firebase/firestore";
 import {
+  deleteObject,
   getDownloadURL,
   getStorage,
   ref as storageRef,
@@ -241,6 +244,26 @@ async function attachResourceComments(resources) {
   })));
 }
 
+function normalizeResourceScope(value) {
+  return value === "shared" ? "shared" : "personal";
+}
+
+async function readVisibleResources(userId) {
+  const client = getClient();
+  if (!client || !client.auth.currentUser || !userId) return [];
+
+  const resourcesRef = collection(client.db, "resources");
+  const [personalSnapshot, sharedSnapshot] = await Promise.all([
+    getDocs(query(resourcesRef, where("ownerUid", "==", userId), where("scope", "==", "personal"))),
+    getDocs(query(resourcesRef, where("scope", "==", "shared")))
+  ]);
+  const byId = new Map();
+  for (const document of [...personalSnapshot.docs, ...sharedSnapshot.docs]) {
+    byId.set(document.id, { id: document.id, ...document.data() });
+  }
+  return [...byId.values()];
+}
+
 async function readQuestionComments(questionId) {
   const client = getClient();
   if (!client || !client.auth.currentUser || !questionId) return [];
@@ -278,8 +301,9 @@ export async function fetchClubData() {
 
   if (!isFirebaseConfigured) return null;
 
+  const currentUser = getClient()?.auth.currentUser;
   const [resources, sessions, rawQuestions, members, stats] = await Promise.all([
-    readCollection("resources"),
+    readVisibleResources(currentUser?.uid),
     readCollection("sessions"),
     readCollection("questions"),
     readCollection("members"),
@@ -466,8 +490,10 @@ function sanitizeFileName(name) {
 function normalizeResourcePayload(resource, user, fileMeta = {}) {
   const payload = {
     title: String(resource.title || "").trim(),
-    summary: String(resource.summary || "").trim(),
+    body: String(resource.body || resource.summary || "").trim(),
+    summary: String(resource.summary || resource.body || "").trim().slice(0, 260),
     tag: String(resource.tag || "자료").trim() || "자료",
+    scope: normalizeResourceScope(resource.scope),
     owner: String(user?.name || "Ctrl + AI 멤버").trim(),
     ownerUid: user?.uid || "",
     status: "published",
@@ -481,6 +507,7 @@ function normalizeResourcePayload(resource, user, fileMeta = {}) {
 
   if (!payload.title) throw new Error("자료 제목을 입력해 주세요.");
   if (payload.title.length > 80) throw new Error("자료 제목은 80자 이내로 입력해 주세요.");
+  if (payload.body.length > 10000) throw new Error("자료 본문은 10,000자 이내로 입력해 주세요.");
   if (payload.summary.length > 260) throw new Error("자료 설명은 260자 이내로 입력해 주세요.");
   if (!payload.tag) throw new Error("자료 분류를 입력해 주세요.");
   if (payload.tag.length > 24) throw new Error("자료 분류는 24자 이내로 입력해 주세요.");
@@ -488,14 +515,15 @@ function normalizeResourcePayload(resource, user, fileMeta = {}) {
   return payload;
 }
 
-async function uploadResourceFile(client, user, file) {
+async function uploadResourceFile(client, user, file, scope = "personal") {
   if (!file) return {};
   if (file.size > RESOURCE_FILE_LIMIT) {
     throw new Error("첨부 파일은 20MB 이하만 업로드할 수 있습니다.");
   }
 
   const safeName = sanitizeFileName(file.name);
-  const path = `resource-files/${user.uid}/${Date.now()}-${safeName}`;
+  const safeScope = normalizeResourceScope(scope);
+  const path = `resource-files/${safeScope}/${user.uid}/${Date.now()}-${safeName}`;
   const ref = storageRef(client.storage, path);
   await uploadBytes(ref, file, { contentType: file.type || "application/octet-stream" });
   const fileUrl = await getDownloadURL(ref);
@@ -516,7 +544,7 @@ export async function createResource(resource, file, appUser) {
 
     const fileMeta = file ? {
       fileUrl: URL.createObjectURL(file),
-      filePath: `local/${Date.now()}-${sanitizeFileName(file.name)}`,
+      filePath: `local/${normalizeResourceScope(resource.scope)}/${Date.now()}-${sanitizeFileName(file.name)}`,
       fileName: file.name || "local-file",
       fileType: file.type || "application/octet-stream",
       fileSize: file.size || 0
@@ -524,7 +552,7 @@ export async function createResource(resource, file, appUser) {
     const body = String(resource.body || resource.summary || "").trim();
     if (body.length > 10000) throw new Error("자료 본문은 10,000자 이내로 입력해 주세요.");
     const payload = {
-      ...normalizeResourcePayload(resource, currentUser, fileMeta),
+      ...normalizeResourcePayload({ ...resource, scope: normalizeResourceScope(resource.scope) }, currentUser, fileMeta),
       body,
       summary: String(resource.summary || body).trim().slice(0, 260)
     };
@@ -539,11 +567,11 @@ export async function createResource(resource, file, appUser) {
 
   const profile = await readMemberProfile(user.uid);
   const currentUser = appUser || toAppUser(user, profile);
-  const fileMeta = await uploadResourceFile(client, user, file);
+  const fileMeta = await uploadResourceFile(client, user, file, normalizeResourceScope(resource.scope));
   const body = String(resource.body || resource.summary || "").trim();
   if (body.length > 10000) throw new Error("자료 본문은 10,000자 이내로 입력해 주세요.");
   const payload = {
-    ...normalizeResourcePayload(resource, currentUser, fileMeta),
+    ...normalizeResourcePayload({ ...resource, scope: normalizeResourceScope(resource.scope) }, currentUser, fileMeta),
     body,
     summary: String(resource.summary || body).trim().slice(0, 260)
   };
@@ -589,7 +617,7 @@ export async function updateResource(resourceId, updates, file, appUser) {
     const filePatch = file ? {
       href: URL.createObjectURL(file),
       fileUrl: URL.createObjectURL(file),
-      filePath: `local/${Date.now()}-${sanitizeFileName(file.name)}`,
+      filePath: `local/${normalizeResourceScope(target.scope)}/${Date.now()}-${sanitizeFileName(file.name)}`,
       fileName: file.name || "local-file",
       fileType: file.type || "application/octet-stream",
       fileSize: file.size || 0
@@ -612,7 +640,7 @@ export async function updateResource(resourceId, updates, file, appUser) {
   }
 
   const payload = normalizeResourceEditable(updates);
-  const fileMeta = await uploadResourceFile(client, user, file);
+  const fileMeta = await uploadResourceFile(client, user, file, normalizeResourceScope(current.scope));
   const filePatch = file ? {
     href: String(fileMeta.fileUrl || "").trim(),
     fileUrl: String(fileMeta.fileUrl || "").trim(),
@@ -629,6 +657,43 @@ export async function updateResource(resourceId, updates, file, appUser) {
   });
 
   return { id: resourceId, ...current, ...payload, ...filePatch, updatedAt: new Date().toISOString() };
+}
+
+export async function deleteResource(resourceId, resource, appUser) {
+  if (!resourceId) throw new Error("삭제할 자료를 찾을 수 없습니다.");
+
+  if (isLocalPreviewAuth) {
+    const currentUser = appUser || toPublicLocalUser(getLocalUser(getLocalStorage().getItem(LOCAL_SESSION_KEY)));
+    if (!currentUser) throw new Error("로그인 후 자료를 삭제할 수 있습니다.");
+    const resources = readLocalList(LOCAL_RESOURCES_KEY);
+    const target = resources.find((item) => item.id === resourceId);
+    if (!target) return resourceId;
+    if (!canManageOwnedContent(target, currentUser)) {
+      throw new Error("작성자 또는 admin만 자료를 삭제할 수 있습니다.");
+    }
+    writeLocalList(LOCAL_RESOURCES_KEY, resources.filter((item) => item.id !== resourceId));
+    return resourceId;
+  }
+
+  const client = requireClient();
+  const user = client.auth.currentUser;
+  if (!user) throw new Error("로그인 후 자료를 삭제할 수 있습니다.");
+
+  const documentRef = doc(client.db, "resources", resourceId);
+  const snapshot = await getDoc(documentRef);
+  if (!snapshot.exists()) return resourceId;
+  const current = snapshot.data();
+  if (!canManageOwnedContent(current, appUser || { uid: user.uid })) {
+    throw new Error("작성자 또는 admin만 자료를 삭제할 수 있습니다.");
+  }
+
+  const comments = Array.isArray(resource?.comments) ? resource.comments : await readResourceComments(resourceId).catch(() => []);
+  await Promise.all(comments.map((comment) => deleteDoc(doc(client.db, "resources", resourceId, "comments", comment.id))));
+  await deleteDoc(documentRef);
+  if (current.filePath) {
+    await deleteObject(storageRef(client.storage, current.filePath)).catch(() => {});
+  }
+  return resourceId;
 }
 
 export async function createResourceComment(resourceId, comment, appUser) {

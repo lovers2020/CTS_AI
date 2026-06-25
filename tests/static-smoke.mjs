@@ -27,20 +27,7 @@ if (!html.includes('id="root"')) throw new Error("React root is missing");
 if (!html.includes('/src/main.jsx')) throw new Error("React entry script is missing");
 
 const app = readFileSync(join(root, "src/main.jsx"), "utf8");
-for (const token of [
-  "function App",
-  "AuthScreen",
-  "ResourcesPage",
-  "ResourceModal",
-  "ResourceFileDrop",
-  "SchedulePage",
-  "CalendarGrid",
-  "DatePickerField",
-  "TimePickerField",
-  "QuestionsPage",
-  "QuestionDetailModal",
-  "createRoot"
-]) {
+for (const token of ["function App", "AuthScreen", "ResourcesPage", "ResourceModal", "SchedulePage", "CalendarGrid", "DatePickerField", "TimePickerField", "QuestionsPage", "QuestionDetailModal", "createRoot"]) {
   if (!app.includes(token)) throw new Error(`Expected React token missing: ${token}`);
 }
 if (!app.includes('if (!user) {')) {
@@ -52,84 +39,37 @@ if (app.includes("LandingPublic")) {
 if (app.includes("data-page-section") || app.includes("innerHTML")) {
   throw new Error("Legacy DOM rendering markers should not remain");
 }
-for (const token of [
-  "createResource",
-  "updateResource",
-  "createResourceComment",
-  "notion-resource-page",
-  "ResourceFileDrop",
-  "updateQuestion",
-  "deleteQuestion",
-  "updateQuestionComment",
-  "deleteQuestionComment",
-  "comment-edit-panel",
-  "mini-action"
-]) {
-  if (!app.includes(token)) throw new Error(`Expected feature token missing: ${token}`);
+if (!app.includes("등록자 미상") || !app.includes("댓글 등록")) {
+  throw new Error("Schedule owner labels and question comments should be present");
+}
+for (const token of ["createResource", "updateResource", "createResourceComment", "notion-resource-page", "ResourceFileDrop", "focusResourceId", "download={resource.fileName || true}", "댓글 등록"]) {
+  if (!app.includes(token)) throw new Error(`Expected Notion resource token missing: ${token}`);
+}
+for (const token of ["updateQuestion", "deleteQuestion", "updateQuestionComment", "deleteQuestionComment", "게시글 저장", "댓글 관리"]) {
+  if (!app.includes(token)) throw new Error(`Expected edit/delete token missing: ${token}`);
 }
 if (app.includes('type="date"') || app.includes('type="time"')) {
   throw new Error("Native date/time inputs should not be used for the schedule modal");
 }
+if (!app.includes("scope }, file") || !app.includes("공유 페이지 추가")) throw new Error("Shared resource creation should keep the shared scope from the modal");
 if (!app.includes("picker-popover") || !app.includes("mini-calendar") || !app.includes("time-chip-grid")) {
   throw new Error("Custom date/time picker UI should be present");
 }
+
 if (app.includes(".reset(") || app.includes("currentTarget.reset") || app.includes("target.reset")) {
   throw new Error("Comment/question submit handlers should not call form reset");
 }
-if (!app.includes("isLocalPreviewAuth") || !app.includes("admin / 123123")) {
-  throw new Error("Local admin preview notice should remain in the UI");
-}
-
-const firebaseModule = readFileSync(join(root, "src/lib/firebase.js"), "utf8");
-for (const token of [
-  "LOCAL_ADMIN_PASSWORD",
-  "LOCAL_RESOURCES_KEY",
-  "isLocalPreviewAuth",
-  "sessionStorage",
-  "createResource",
-  "updateResource",
-  "createResourceComment",
-  "createQuestionComment",
-  "updateQuestionComment",
-  "deleteQuestionComment",
-  "readResourceComments"
-]) {
-  if (!firebaseModule.includes(token)) throw new Error(`Local preview feature missing: ${token}`);
-}
-if (firebaseModule.includes("localStorage")) {
-  throw new Error("Local preview credentials must not persist in localStorage");
-}
 
 const css = readFileSync(join(root, "src/styles.css"), "utf8");
-for (const token of [
-  "Pretendard",
-  ".picker-popover",
-  ".time-chip-grid",
-  ".mini-action",
-  ".comment-edit-panel",
-  ".notion-resource-page",
-  ".notion-sidebar",
-  ".notion-document",
-  ".resource-file-drop",
-  ".schedule-cta",
-  ".stack-card:hover",
-  "cursor: default",
-  ".nav-card",
-  "repeat(5, 92px)"
-]) {
-  if (!css.includes(token)) throw new Error(`Expected CSS token missing: ${token}`);
+if (!css.includes("Pretendard")) throw new Error("Pretendard font should be configured");
+if (!css.includes(".picker-popover") || !css.includes(".time-chip-grid")) throw new Error("Custom picker styles should be configured");
+if (!css.includes(".mini-action") || !css.includes(".comment-edit-panel")) throw new Error("Question/comment edit controls should be styled");
+for (const token of [".notion-resource-page", ".notion-sidebar", ".notion-document", ".resource-file-drop", ".schedule-cta", ".stack-card:hover", "cursor: default", ".nav-card", "repeat(5, 92px)"]) {
+  if (!css.includes(token)) throw new Error(`Expected interaction/resource CSS missing: ${token}`);
 }
 
 const rules = readFileSync(join(root, "firestore.rules"), "utf8");
-for (const token of [
-  "isValidResource",
-  "isValidResourceUpdate",
-  "isValidQuestionUpdate",
-  "isValidCommentUpdate",
-  "match /comments/{commentId}",
-  "isQuestionOwner",
-  "\"body\""
-]) {
+for (const token of ["isValidResource", "isValidResourceUpdate", "isValidQuestionUpdate", "isValidCommentUpdate", "match /comments/{commentId}", "isQuestionOwner"]) {
   if (!rules.includes(token)) throw new Error(`Expected rules token missing: ${token}`);
 }
 

@@ -18,6 +18,31 @@ service cloud.firestore {
       return isAdmin() || isResourceOwner();
     }
 
+    function canReadResource() {
+      return isSignedIn()
+        && (resource.data.scope == "shared"
+          || resource.data.ownerUid == request.auth.uid
+          || isAdmin());
+    }
+
+    function canReadParentResource(resourceId) {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/resources/$(resourceId))
+        && (get(/databases/$(database)/documents/resources/$(resourceId)).data.scope == "shared"
+          || get(/databases/$(database)/documents/resources/$(resourceId)).data.ownerUid == request.auth.uid
+          || isAdmin());
+    }
+
+    function isParentResourceOwner(resourceId) {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/resources/$(resourceId))
+        && get(/databases/$(database)/documents/resources/$(resourceId)).data.ownerUid == request.auth.uid;
+    }
+
+    function canManageParentResource(resourceId) {
+      return isAdmin() || isParentResourceOwner(resourceId);
+    }
+
     function isQuestionOwner(questionId) {
       return isSignedIn()
         && exists(/databases/$(database)/documents/questions/$(questionId))
@@ -36,16 +61,16 @@ service cloud.firestore {
     }
 
     match /resources/{document} {
-      allow read: if isSignedIn();
+      allow read: if canReadResource();
       allow create: if isSignedIn() && isValidResource();
       allow update: if canManageResource() && isValidResourceUpdate();
       allow delete: if canManageResource();
 
       match /comments/{commentId} {
-        allow read: if isSignedIn();
-        allow create: if isSignedIn() && isValidComment();
-        allow update: if canManageResource() && isValidCommentUpdate();
-        allow delete: if canManageResource();
+        allow read: if canReadParentResource(document);
+        allow create: if canReadParentResource(document) && isValidComment();
+        allow update: if (canManageParentResource(document) || isResourceOwner()) && isValidCommentUpdate();
+        allow delete: if canManageParentResource(document) || isResourceOwner();
       }
     }
 
@@ -90,6 +115,7 @@ service cloud.firestore {
         "body",
         "summary",
         "tag",
+        "scope",
         "owner",
         "ownerUid",
         "status",
@@ -111,6 +137,7 @@ service cloud.firestore {
       && request.resource.data.tag is string
       && request.resource.data.tag.size() > 0
       && request.resource.data.tag.size() <= 24
+      && request.resource.data.scope in ["personal", "shared"]
       && request.resource.data.owner is string
       && request.resource.data.owner.size() > 0
       && request.resource.data.owner.size() <= 40
@@ -138,6 +165,7 @@ service cloud.firestore {
         "body",
         "summary",
         "tag",
+        "scope",
         "owner",
         "ownerUid",
         "status",
@@ -160,6 +188,7 @@ service cloud.firestore {
       && request.resource.data.tag is string
       && request.resource.data.tag.size() > 0
       && request.resource.data.tag.size() <= 24
+      && request.resource.data.scope == resource.data.scope
       && request.resource.data.owner == resource.data.owner
       && request.resource.data.ownerUid == resource.data.ownerUid
       && request.resource.data.status == resource.data.status

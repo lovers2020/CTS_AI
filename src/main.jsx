@@ -3,10 +3,9 @@ import { createRoot } from "react-dom/client";
 import {
   createQuestion,
   createResource,
-  createResourceComment,
-  deleteQuestion,
-  deleteQuestionComment,
   updateResource,
+  deleteResource,
+  createResourceComment,
   createSession,
   fetchClubData,
   isAuthAvailable,
@@ -18,7 +17,9 @@ import {
   updateMemberProfile,
   createQuestionComment,
   updateQuestion,
+  deleteQuestion,
   updateQuestionComment,
+  deleteQuestionComment
 } from "./lib/firebase.js";
 import "./styles.css";
 
@@ -278,9 +279,10 @@ function SelectField({ label, options, ...props }) {
   );
 }
 
-function Shell({ user, view, data, loading, error, onNavigate, onLogout, onRefresh, onCreateResource, onUpdateResource, onCreateResourceComment, onCreateSession, onCreateQuestion, onUpdateQuestion, onDeleteQuestion, onCreateComment, onUpdateComment, onDeleteComment, onUpdateMember }) {
+function Shell({ user, view, data, loading, error, onNavigate, onLogout, onRefresh, onCreateResource, onUpdateResource, onDeleteResource, onCreateResourceComment, onCreateSession, onCreateQuestion, onUpdateQuestion, onDeleteQuestion, onCreateComment, onUpdateComment, onDeleteComment, onUpdateMember }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [resourceOpen, setResourceOpen] = useState(false);
+  const [resourceOpen, setResourceOpen] = useState(null);
+  const [focusResourceId, setFocusResourceId] = useState("");
   const [sessionDate, setSessionDate] = useState(null);
   const [questionOpen, setQuestionOpen] = useState(false);
   const [selectedQuestion, setSelectedQuestion] = useState(null);
@@ -292,14 +294,14 @@ function Shell({ user, view, data, loading, error, onNavigate, onLogout, onRefre
       <main className="page-frame">
         {error && <div className="notice error">{error}</div>}
         {view === "home" && <Home data={data} onNavigate={onNavigate} />}
-        {view === "resources" && <ResourcesPage resources={data.resources} loading={loading} user={user} onRegister={() => setResourceOpen(true)} onUpdate={onUpdateResource} onComment={onCreateResourceComment} />}
+        {view === "resources" && <ResourcesPage resources={data.resources} loading={loading} user={user} focusResourceId={focusResourceId} onRegister={(scope) => setResourceOpen(scope || "personal")} onUpdate={onUpdateResource} onDelete={onDeleteResource} onComment={onCreateResourceComment} />}
         {view === "schedule" && <SchedulePage sessions={data.sessions} loading={loading} onDateClick={setSessionDate} onOpen={() => setSessionDate(dateKey(new Date()))} />}
         {view === "questions" && <QuestionsPage questions={data.questions} loading={loading} onAsk={() => setQuestionOpen(true)} onSelect={setSelectedQuestion} />}
         {view === "members" && <MembersPage members={data.members} loading={loading} user={user} onEdit={setMemberToEdit} />}
         {view === "about" && <AboutPage />}
       </main>
       <Footer />
-      {resourceOpen && <ResourceModal onClose={() => setResourceOpen(false)} onSubmit={async (payload, file) => { await onCreateResource(payload, file); setResourceOpen(false); onRefresh(); }} />}
+      {resourceOpen && <ResourceModal scope={resourceOpen} onClose={() => setResourceOpen(null)} onSubmit={async (payload, file) => { const created = await onCreateResource(payload, file); if (created?.id) setFocusResourceId(created.id); setResourceOpen(null); onRefresh(); }} />}
       {sessionDate && <SessionModal date={sessionDate} user={user} onClose={() => setSessionDate(null)} onSubmit={async (payload) => { await onCreateSession(payload); setSessionDate(null); onRefresh(); }} />}
       {questionOpen && <QuestionModal onClose={() => setQuestionOpen(false)} onSubmit={async (payload) => { await onCreateQuestion(payload); setQuestionOpen(false); onRefresh(); }} />}
       {selectedQuestion && <QuestionDetailModal
@@ -425,7 +427,7 @@ function PageHero({ kicker, title, copy, action }) {
   );
 }
 
-function ResourcesPage({ resources, loading, user, onRegister, onUpdate, onComment }) {
+function ResourcesPage({ resources, loading, user, focusResourceId, onRegister, onUpdate, onDelete, onComment }) {
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState("");
   const filtered = useMemo(() => {
@@ -434,34 +436,75 @@ function ResourcesPage({ resources, loading, user, onRegister, onUpdate, onComme
     return resources.filter((item) => [item.title, item.summary, item.body, item.tag, item.owner].join(" ").toLowerCase().includes(needle));
   }, [resources, query]);
 
-  useEffect(() => {
-    if (filtered.length === 0) { if (selectedId) setSelectedId(""); return; }
-    if (!filtered.some((item) => item.id === selectedId)) setSelectedId(filtered[0].id);
-  }, [filtered, selectedId]);
+  const getScope = (item) => item.scope || (item.ownerUid === user.uid ? "personal" : "shared");
+  const myPages = useMemo(() => filtered.filter((item) => getScope(item) === "personal" && item.ownerUid === user.uid), [filtered, user.uid]);
+  const sharedPages = useMemo(() => filtered.filter((item) => getScope(item) === "shared"), [filtered, user.uid]);
 
-  const selected = filtered.find((item) => item.id === selectedId) || filtered[0] || null;
-  const myPages = filtered.filter((item) => item.ownerUid === user.uid);
-  const sharedPages = filtered.filter((item) => item.ownerUid !== user.uid);
+  useEffect(() => {
+    if (focusResourceId && filtered.some((item) => item.id === focusResourceId)) {
+      setSelectedId(focusResourceId);
+      return;
+    }
+    if (filtered.length === 0) {
+      if (selectedId) setSelectedId("");
+      return;
+    }
+    if (!filtered.some((item) => item.id === selectedId)) {
+      const fallback = myPages[0] || sharedPages[0] || filtered[0];
+      setSelectedId(fallback.id);
+    }
+  }, [filtered, focusResourceId, myPages, selectedId, sharedPages]);
+
+  const selected = filtered.find((item) => item.id === selectedId) || myPages[0] || sharedPages[0] || filtered[0] || null;
+
+  async function requestDelete(item) {
+    if (!item?.id) return;
+    const ok = window.confirm(`\"${item.title || "제목 없는 페이지"}\" 페이지를 삭제할까요? 댓글과 첨부 파일도 함께 삭제됩니다.`);
+    if (!ok) return;
+    await onDelete(item.id, item);
+  }
+
+  function renderPageLink(item, icon) {
+    const canDelete = canManageItem(item, user);
+    return (
+      <div key={item.id} className={cx("notion-page-row", selected?.id === item.id && "active")}>
+        <button type="button" className="notion-page-link" onClick={() => setSelectedId(item.id)}>
+          <span>{icon}</span><b>{item.title || "제목 없는 페이지"}</b>
+        </button>
+        {canDelete && (
+          <button
+            className="notion-row-delete"
+            type="button"
+            aria-label={`${item.title || "페이지"} 삭제`}
+            onClick={() => requestDelete(item)}
+          >
+            ×
+          </button>
+        )}
+      </div>
+    );
+  }
 
   return (
     <section className="notion-resource-page">
       <aside className="notion-sidebar">
-        <div className="notion-sidebar-head"><b>개인 페이지</b><button className="mini-icon-action" type="button" onClick={onRegister}>＋</button></div>
+        <div className="notion-sidebar-head"><b>개인 페이지</b><button className="mini-icon-action" type="button" onClick={() => onRegister("personal")}>＋</button></div>
         <label className="notion-search"><span className="sr-only">자료 검색</span><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="자료 검색" /></label>
         <div className="notion-page-list">
           {loading && <Skeleton count={3} />}
-          {!loading && myPages.length === 0 && <p className="notion-empty-line">내가 작성한 자료가 없습니다.</p>}
-          {!loading && myPages.map((item) => <button key={item.id} type="button" className={cx("notion-page-link", selected?.id === item.id && "active")} onClick={() => setSelectedId(item.id)}><span>▤</span><b>{item.title || "제목 없는 페이지"}</b></button>)}
+          {!loading && myPages.length === 0 && <p className="notion-empty-line">내 개인 페이지가 없습니다.</p>}
+          {!loading && myPages.map((item) => renderPageLink(item, "▤"))}
         </div>
-        <button className="notion-add-page" type="button" onClick={onRegister}>＋ 새 페이지 추가</button>
+        <button className="notion-add-page" type="button" onClick={() => onRegister("personal")}>＋ 새 개인 페이지 추가</button>
         <div className="notion-divider" />
-        <div className="notion-sidebar-head"><b>팀 공유 문서</b><span>{sharedPages.length}</span></div>
-        <div className="notion-folder">⌄ 2026</div>
+        <div className="notion-sidebar-head"><b>공유 페이지</b><button className="mini-icon-action" type="button" onClick={() => onRegister("shared")}>＋</button></div>
         <div className="notion-page-list shared">
-          {!loading && sharedPages.map((item) => <button key={item.id} type="button" className={cx("notion-page-link", selected?.id === item.id && "active")} onClick={() => setSelectedId(item.id)}><span>□</span><b>{item.title || "제목 없는 페이지"}</b></button>)}
+          {!loading && sharedPages.length === 0 && <p className="notion-empty-line">공유된 페이지가 없습니다.</p>}
+          {!loading && sharedPages.map((item) => renderPageLink(item, "□"))}
         </div>
+        <button className="notion-add-page" type="button" onClick={() => onRegister("shared")}>＋ 새 공유 페이지 추가</button>
       </aside>
-      <ResourceDocumentEditor resource={selected} loading={loading} user={user} onRegister={onRegister} onUpdate={onUpdate} onComment={onComment} />
+      <ResourceDocumentEditor resource={selected} loading={loading} user={user} onRegister={onRegister} onUpdate={onUpdate} onDelete={onDelete} onComment={onComment} />
     </section>
   );
 }
@@ -474,7 +517,7 @@ function safeResourceUrl(item) {
   return "";
 }
 
-function ResourceDocumentEditor({ resource, loading, user, onRegister, onUpdate, onComment }) {
+function ResourceDocumentEditor({ resource, loading, user, onRegister, onUpdate, onDelete, onComment }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState({ title: "", tag: "자료", body: "" });
   const [file, setFile] = useState(null);
@@ -484,6 +527,7 @@ function ResourceDocumentEditor({ resource, loading, user, onRegister, onUpdate,
   const fileUrl = safeResourceUrl(resource);
   const comments = Array.isArray(resource?.comments) ? resource.comments : [];
   const canEdit = canManageItem(resource, user);
+  const resourceScope = resource?.scope || (resource?.ownerUid === user?.uid ? "personal" : "shared");
 
   useEffect(() => {
     setEditing(false); setFile(null); setStatus(""); setCommentBody("");
@@ -491,12 +535,21 @@ function ResourceDocumentEditor({ resource, loading, user, onRegister, onUpdate,
   }, [resource?.id]);
 
   if (loading) return <main className="notion-document"><Skeleton count={4} /></main>;
-  if (!resource) return <main className="notion-document empty-doc"><div className="doc-empty-state"><span>▤</span><h1>자료가 없습니다</h1><p>새 페이지를 만들고 파일을 첨부해 팀 자료를 축적하세요.</p><button className="primary-action" type="button" onClick={onRegister}>새 페이지 만들기</button></div></main>;
+  if (!resource) return <main className="notion-document empty-doc"><div className="doc-empty-state"><span>▤</span><h1>자료가 없습니다</h1><p>새 페이지를 만들고 파일을 첨부해 팀 자료를 축적하세요.</p><div className="empty-doc-actions"><button className="primary-action" type="button" onClick={() => onRegister("personal")}>개인 페이지 만들기</button><button className="soft-action" type="button" onClick={() => onRegister("shared")}>공유 페이지 만들기</button></div></div></main>;
 
   async function saveEdit() {
     setStatus(""); setBusy(true);
     try { await onUpdate(resource.id, draft, file); setEditing(false); setFile(null); setStatus("자료가 수정되었습니다."); }
     catch (e) { setStatus(e.message || "자료 수정에 실패했습니다."); }
+    finally { setBusy(false); }
+  }
+
+  async function deletePage() {
+    const ok = window.confirm(`\"${resource.title || "제목 없는 페이지"}\" 페이지를 삭제할까요? 댓글과 첨부 파일도 함께 삭제됩니다.`);
+    if (!ok) return;
+    setStatus(""); setBusy(true);
+    try { await onDelete(resource.id, resource); }
+    catch (e) { setStatus(e.message || "자료 삭제에 실패했습니다."); }
     finally { setBusy(false); }
   }
   async function submitComment() {
@@ -510,7 +563,7 @@ function ResourceDocumentEditor({ resource, loading, user, onRegister, onUpdate,
 
   return (
     <main className="notion-document">
-      <div className="notion-doc-toolbar"><div className="notion-breadcrumb"><span>□ Personal</span><i>›</i><b>{resource.title || "제목 없는 페이지"}</b></div><div className="notion-doc-actions">{fileUrl && <a className="mini-action" href={fileUrl} target="_blank" rel="noreferrer">첨부 열기</a>}{canEdit && !editing && <button className="mini-action" type="button" onClick={() => setEditing(true)}>수정</button>}</div></div>
+      <div className="notion-doc-toolbar"><div className="notion-breadcrumb"><span>□ {resourceScope === "shared" ? "공유 페이지" : "개인 페이지"}</span><i>›</i><b>{resource.title || "제목 없는 페이지"}</b></div><div className="notion-doc-actions">{fileUrl && <><a className="mini-action" href={fileUrl} target="_blank" rel="noreferrer">첨부 열기</a><a className="mini-action" href={fileUrl} download={resource.fileName || true} target="_blank" rel="noreferrer">다운로드</a></>}{canEdit && !editing && <button className="mini-action" type="button" onClick={() => setEditing(true)}>수정</button>}{canEdit && <button className="mini-action danger" type="button" onClick={deletePage} disabled={busy}>삭제</button>}</div></div>
       <article className="notion-doc-body">
         <div className="notion-doc-icon">▤</div>
         {!editing ? <>
@@ -518,7 +571,7 @@ function ResourceDocumentEditor({ resource, loading, user, onRegister, onUpdate,
           <div className="notion-meta"><span>♙ {resource.owner || "Ctrl + AI"}</span><span>최종 수정: {formatDate(resource.updatedAt || resource.createdAt)}</span><span>{resource.tag || "자료"}</span></div>
           <div className="notion-rule" />
           <div className="notion-content-text">{resource.body || resource.summary || "여기에 내용을 입력하세요..."}</div>
-          {resource.fileName && <div className="notion-attachment"><span>📎</span><div><b>{resource.fileName}</b><small>{resource.fileType || "첨부 파일"}{resource.fileSize ? ` · ${Math.ceil(resource.fileSize / 1024)}KB` : ""}</small></div>{fileUrl && <a href={fileUrl} target="_blank" rel="noreferrer">열기</a>}</div>}
+          {resource.fileName && <div className="notion-attachment"><span>📎</span><div><b>{resource.fileName}</b><small>{resource.fileType || "첨부 파일"}{resource.fileSize ? ` · ${Math.ceil(resource.fileSize / 1024)}KB` : ""}</small></div>{fileUrl && <><a href={fileUrl} target="_blank" rel="noreferrer">열기</a><a href={fileUrl} download={resource.fileName || true} target="_blank" rel="noreferrer">다운로드</a></>}</div>}
         </> : <div className="notion-edit-panel">
           <div className="form-grid two compact"><TextField label="제목" value={draft.title} onChange={(e) => setDraft((c) => ({ ...c, title: e.target.value }))} maxLength={80} required /><TextField label="분류" value={draft.tag} onChange={(e) => setDraft((c) => ({ ...c, tag: e.target.value }))} maxLength={24} required /></div>
           <TextArea label="본문" value={draft.body} onChange={(e) => setDraft((c) => ({ ...c, body: e.target.value }))} placeholder="여기에 내용을 입력하세요..." maxLength={10000} />
@@ -913,7 +966,7 @@ function TimePickerField({ name, label, value, onChange, required }) {
   );
 }
 
-function ResourceModal({ onClose, onSubmit }) {
+function ResourceModal({ scope = "personal", onClose, onSubmit }) {
   const [file, setFile] = useState(null);
   const [status, setStatus] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -941,7 +994,7 @@ function ResourceModal({ onClose, onSubmit }) {
     setUploading(true);
     try {
       const form = new FormData(event.currentTarget);
-      await onSubmit(Object.fromEntries(form.entries()), file);
+      await onSubmit({ ...Object.fromEntries(form.entries()), scope }, file);
     } catch (error) {
       setStatus(error.message || "자료 등록에 실패했습니다.");
     } finally {
@@ -950,8 +1003,9 @@ function ResourceModal({ onClose, onSubmit }) {
   }
 
   return (
-    <Modal title="자료 등록" onClose={onClose} wide>
+    <Modal title={scope === "shared" ? "공유 페이지 추가" : "개인 페이지 추가"} onClose={onClose} wide>
       <form className="stack-form resource-form" onSubmit={submit}>
+        <input type="hidden" name="scope" value={scope} readOnly />
         <button
           className="notion-upload"
           type="button"
@@ -961,7 +1015,7 @@ function ResourceModal({ onClose, onSubmit }) {
         >
           <span className="upload-icon">＋</span>
           <strong>{file ? file.name : "파일을 첨부하거나 클릭해서 업로드"}</strong>
-          <small>{file ? `${Math.ceil(file.size / 1024)}KB · ${file.type || "파일"}` : "PDF, 이미지, 문서 등 20MB 이하 파일을 자료에 연결합니다."}</small>
+          <small>{file ? `${Math.ceil(file.size / 1024)}KB · ${file.type || "파일"}` : `${scope === "shared" ? "모든 멤버가 볼 수 있는 공유 페이지" : "본인만 볼 수 있는 개인 페이지"}에 PDF, 이미지, 문서 등 20MB 이하 파일을 연결합니다.`}</small>
         </button>
         <input ref={fileInputRef} className="hidden-file-input" type="file" onChange={handleFileChange} />
         <div className="form-grid two">
@@ -1323,8 +1377,9 @@ function App() {
       onNavigate={go}
       onLogout={async () => { await signOutMember(); setUser(null); setData(emptyData); go("/"); }}
       onRefresh={loadData}
-      onCreateResource={(payload, file) => createResource(payload, file, user).then((created) => setData((current) => ({ ...current, resources: [created, ...current.resources] })))}
+      onCreateResource={(payload, file) => createResource(payload, file, user).then((created) => { setData((current) => ({ ...current, resources: [created, ...current.resources] })); return created; })}
       onUpdateResource={(resourceId, payload, file) => updateResource(resourceId, payload, file, user).then((updated) => { setData((current) => ({ ...current, resources: current.resources.map((item) => item.id === resourceId ? { ...item, ...updated } : item) })); return updated; })}
+      onDeleteResource={(resourceId, resource) => deleteResource(resourceId, resource, user).then((deletedId) => { setData((current) => ({ ...current, resources: current.resources.filter((item) => item.id !== deletedId) })); return deletedId; })}
       onCreateResourceComment={(resourceId, payload) => createResourceComment(resourceId, payload, user).then((created) => { setData((current) => ({ ...current, resources: current.resources.map((resource) => resource.id === resourceId ? { ...resource, comments: [...(resource.comments || []), created] } : resource) })); return created; })}
       onCreateSession={(payload) => createSession(payload, user).then((created) => setData((current) => ({ ...current, sessions: [created, ...current.sessions] })))}
       onCreateQuestion={(payload) => createQuestion(payload, user).then((created) => setData((current) => ({ ...current, questions: [created, ...current.questions] })))}
